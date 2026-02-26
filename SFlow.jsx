@@ -966,6 +966,26 @@ function extractTasksFromPlan(tasksText) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
+    const match = trimmed.match(/^(?:\d+[\.\)]\s*|[-•*]\s*|[A-Z]\.\s*)(.+)/);
+    if (match) {
+      const taskText = match[1].trim();
+      if (taskText.length > 10 && !taskText.match(/^(phase|stage|week|month|day|section)/i)) {
+        const cleaned = taskText
+          .replace(/\s*[-–]\s*(Role|Responsible|Owner|Lead|Duration|Time)[:\s].+$/i, "")
+          .replace(/\s*\((?:Project Manager|Coordinator|Director|Officer|Lead|Team|Staff|Volunteer)[^)]*\)/gi, "")
+          .trim();
+        if (cleaned.length > 8) {
+          tasks.push({ text: cleaned, done: false });
+        }
+      }
+    }
+  }
+  if (tasks.length === 0) {
+    const sentences = tasksText.split(/[\.\n]/).filter(s => s.trim().length > 15);
+    return sentences.slice(0, 15).map(s => ({ text: s.trim(), done: false }));
+  }
+  return tasks.slice(0, 25);
+}
     // Match numbered items like "1.", "1)", bullet points, or lines with task-like content
     const match = trimmed.match(/^(?:\d+[\.\)]\s*|[-•*]\s*|[A-Z]\.\s*)(.+)/);
     if (match) {
