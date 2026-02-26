@@ -179,6 +179,252 @@ function AuthScreen({ onAuth }) {
   );
 }
 
+// ─── PROGRESS RING ───────────────────────────────────────────────────────────
+function ProgressRing({ percent, color, size = 64 }) {
+  const r = (size - 8) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (percent / 100) * circ;
+  return (
+    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E8F5EC" strokeWidth={7} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color || "#1A7A3C"} strokeWidth={7}
+        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+        style={{ transition: "stroke-dashoffset 0.5s ease" }} />
+    </svg>
+  );
+}
+
+// ─── PROJECT TRACKER ─────────────────────────────────────────────────────────
+function ProjectTracker({ project, onBack, onUpdate }) {
+  const [tasks, setTasks] = useState(project.tasks || []);
+  const [notes, setNotes] = useState(project.notes || []);
+  const [newNote, setNewNote] = useState("");
+  const [newTask, setNewTask] = useState("");
+  const [status, setStatus] = useState(project.status || "Planning");
+
+  const completedCount = tasks.filter(t => t.done).length;
+  const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+
+  const save = (updatedTasks, updatedNotes, updatedStatus) => {
+    const updated = {
+      ...project,
+      tasks: updatedTasks,
+      notes: updatedNotes,
+      status: updatedStatus,
+      progress: updatedTasks.length > 0 ? Math.round((updatedTasks.filter(t => t.done).length / updatedTasks.length) * 100) : 0,
+      updatedAt: new Date().toLocaleString(),
+    };
+    onUpdate(updated);
+  };
+
+  const toggleTask = (idx) => {
+    const updated = tasks.map((t, i) => i === idx ? { ...t, done: !t.done } : t);
+    setTasks(updated);
+    save(updated, notes, status);
+  };
+
+  const addTask = () => {
+    if (!newTask.trim()) return;
+    const updated = [...tasks, { text: newTask.trim(), done: false, addedAt: new Date().toLocaleString() }];
+    setTasks(updated);
+    setNewTask("");
+    save(updated, notes, status);
+  };
+
+  const removeTask = (idx) => {
+    const updated = tasks.filter((_, i) => i !== idx);
+    setTasks(updated);
+    save(updated, notes, status);
+  };
+
+  const addNote = () => {
+    if (!newNote.trim()) return;
+    const updated = [{ text: newNote.trim(), addedAt: new Date().toLocaleString() }, ...notes];
+    setNotes(updated);
+    setNewNote("");
+    save(tasks, updated, status);
+  };
+
+  const changeStatus = (s) => {
+    setStatus(s);
+    save(tasks, notes, s);
+  };
+
+  const inputStyle = {
+    flex: 1, background: "#F7FDF9", border: "1.5px solid #C8E6D0", borderRadius: 8,
+    color: "#0D2B1A", padding: "10px 14px", fontSize: 14, fontFamily: "Georgia, serif",
+    outline: "none", boxSizing: "border-box",
+  };
+
+  return (
+    <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 36px 60px" }}>
+      {/* Back + header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid #C8E6D0", borderRadius: 8, padding: "8px 16px", fontFamily: "monospace", fontSize: 11, color: "#4A7A5A", cursor: "pointer", letterSpacing: 1 }}>← Back</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>{project.industry} · {project.projectType}</div>
+          <h2 style={{ fontSize: "clamp(18px,3vw,28px)", fontWeight: 900, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>{project.projectName}</h2>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <ProgressRing percent={progress} color={STATUS_COLORS[status]} size={72} />
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", marginTop: 4 }}>{progress}% done</div>
+        </div>
+      </div>
+
+      {/* Status selector */}
+      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Project Status</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {["Planning", "In Progress", "Completed", "Post-Execution"].map(s => (
+            <button key={s} onClick={() => changeStatus(s)} style={{
+              padding: "8px 18px", borderRadius: 20, border: `1.5px solid ${STATUS_COLORS[s]}`,
+              background: status === s ? STATUS_COLORS[s] : STATUS_BG[s],
+              color: status === s ? "#fff" : STATUS_COLORS[s],
+              fontFamily: "monospace", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+            }}>{s}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tasks */}
+      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+          Task Checklist — {completedCount}/{tasks.length} completed
+        </div>
+        {tasks.length === 0 && (
+          <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace", marginBottom: 14 }}>No tasks yet. Add tasks from your plan below.</div>
+        )}
+        {tasks.map((task, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #F0FAF2" }}>
+            <input type="checkbox" checked={task.done} onChange={() => toggleTask(i)}
+              style={{ width: 18, height: 18, accentColor: "#1A7A3C", cursor: "pointer", flexShrink: 0 }} />
+            <span style={{ flex: 1, fontSize: 14, color: task.done ? "#8AB89A" : "#0D2B1A", textDecoration: task.done ? "line-through" : "none", fontFamily: "Georgia, serif" }}>{task.text}</span>
+            <button onClick={() => removeTask(i)} style={{ background: "none", border: "none", color: "#DC2626", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
+          </div>
+        ))}
+        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+          <input style={inputStyle} placeholder="Add a task..." value={newTask} onChange={e => setNewTask(e.target.value)} onKeyDown={e => e.key === "Enter" && addTask()} />
+          <button onClick={addTask} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, whiteSpace: "nowrap" }}>+ Add</button>
+        </div>
+      </div>
+
+      {/* Field Notes */}
+      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Field Notes & Updates</div>
+        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+          <textarea style={{ ...inputStyle, minHeight: 72, resize: "vertical" }} placeholder="Log what's happening on the ground — decisions made, changes, wins, blockers..." value={newNote} onChange={e => setNewNote(e.target.value)} />
+          <button onClick={addNote} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, alignSelf: "flex-end", whiteSpace: "nowrap" }}>+ Log</button>
+        </div>
+        {notes.length === 0 && (
+          <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace" }}>No notes yet. Start logging your project activity.</div>
+        )}
+        {notes.map((note, i) => (
+          <div key={i} style={{ background: "#F0FAF2", border: "1px solid #C8E6D0", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
+            <div style={{ fontSize: 14, color: "#0D2B1A", lineHeight: 1.6, fontFamily: "Georgia, serif", marginBottom: 6 }}>{note.text}</div>
+            <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{note.addedAt}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* View original plan */}
+      <div style={{ textAlign: "center", padding: "16px 0", borderTop: "1px solid #C8E6D0", color: "#8AB89A", fontFamily: "monospace", fontSize: 11, letterSpacing: 1 }}>
+        S-Flow by SPHRAGIS — Project Tracker · Last updated {project.updatedAt}
+      </div>
+    </div>
+  );
+}
+
+// ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
+function DashboardPage({ userId, onBack, onViewPlan }) {
+  const [projects, setProjects] = useState(() => loadProjects(userId));
+  const [activeProject, setActiveProject] = useState(null);
+
+  const updateProject = (updated) => {
+    const newProjects = projects.map(p => p.id === updated.id ? updated : p);
+    setProjects(newProjects);
+    saveProjects(newProjects, userId);
+    setActiveProject(updated);
+  };
+
+  const removeProject = (id) => {
+    const newProjects = projects.filter(p => p.id !== id);
+    setProjects(newProjects);
+    saveProjects(newProjects, userId);
+  };
+
+  if (activeProject) {
+    return (
+      <>
+        <div style={{ borderBottom: "2px solid #1A7A3C", padding: "0 36px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", height: 68, position: "sticky", top: 0, zIndex: 100 }}>
+          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 4, color: "#1A7A3C", fontFamily: "Georgia, serif" }}>SPHRAGIS</div>
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 2, textTransform: "uppercase" }}>Project Tracker</div>
+        </div>
+        <ProjectTracker project={activeProject} onBack={() => setActiveProject(null)} onUpdate={updateProject} />
+      </>
+    );
+  }
+
+  const statusCounts = { "Planning": 0, "In Progress": 0, "Completed": 0, "Post-Execution": 0 };
+  projects.forEach(p => { if (statusCounts[p.status] !== undefined) statusCounts[p.status]++; });
+
+  return (
+    <div style={{ maxWidth: 920, margin: "0 auto", padding: "32px 36px 60px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid #C8E6D0", borderRadius: 8, padding: "8px 16px", fontFamily: "monospace", fontSize: 11, color: "#4A7A5A", cursor: "pointer", letterSpacing: 1 }}>← Back</button>
+        <div>
+          <h2 style={{ fontSize: "clamp(20px,3vw,30px)", fontWeight: 900, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>Project Dashboard</h2>
+          <div style={{ fontSize: 12, color: "#4A7A5A", fontFamily: "monospace" }}>{projects.length} project{projects.length !== 1 ? "s" : ""} being tracked</div>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      {projects.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
+          {Object.entries(statusCounts).map(([status, count]) => (
+            <div key={status} style={{ background: STATUS_BG[status], border: `1px solid ${STATUS_COLORS[status]}33`, borderRadius: 10, padding: "14px 16px", borderLeft: `4px solid ${STATUS_COLORS[status]}` }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: STATUS_COLORS[status], fontFamily: "monospace" }}>{count}</div>
+              <div style={{ fontSize: 11, color: STATUS_COLORS[status], fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>{status}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {projects.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 40px", background: "#fff", border: "1px solid #C8E6D0", borderRadius: 12, color: "#4A7A5A", fontFamily: "monospace", fontSize: 13 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>No projects tracked yet</div>
+          <div style={{ color: "#8AB89A" }}>Generate a plan and click "Track This Project" to start monitoring it here.</div>
+        </div>
+      )}
+
+      {/* Project cards */}
+      {projects.map(project => (
+        <div key={project.id} style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 12, padding: "20px 22px", marginBottom: 14, display: "flex", alignItems: "center", gap: 18 }}>
+          <div style={{ flexShrink: 0 }}>
+            <ProgressRing percent={project.progress || 0} color={STATUS_COLORS[project.status]} size={64} />
+            <div style={{ textAlign: "center", fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", marginTop: 2 }}>{project.progress || 0}%</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#0D2B1A", marginBottom: 4, fontFamily: "Georgia, serif" }}>{project.projectName}</div>
+            <div style={{ fontSize: 12, color: "#4A7A5A", fontFamily: "monospace", marginBottom: 8 }}>{project.industry} · {project.projectType}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: STATUS_COLORS[project.status], background: STATUS_BG[project.status], border: `1px solid ${STATUS_COLORS[project.status]}44`, padding: "3px 10px", borderRadius: 20 }}>{project.status}</span>
+              <span style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{project.tasks?.length || 0} tasks · {project.notes?.length || 0} notes</span>
+              <span style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>Updated {project.updatedAt}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
+            <button onClick={() => setActiveProject(project)} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontFamily: "monospace", fontSize: 11, letterSpacing: 1, cursor: "pointer", fontWeight: 700, textTransform: "uppercase" }}>Track →</button>
+            <button onClick={() => removeProject(project.id)} style={{ background: "none", color: "#DC2626", border: "1px solid #DC262633", padding: "7px 18px", borderRadius: 8, fontFamily: "monospace", fontSize: 11, cursor: "pointer" }}>Remove</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── ROOT WRAPPER ─────────────────────────────────────────────────────────────
 export default function Root() {
   const [session, setSession] = useState(() => getSession());
@@ -701,6 +947,55 @@ function saveToHistory(entry, userId) {
   } catch(e) { console.warn("Could not save to history", e); }
 }
 
+// ─── DASHBOARD HELPERS ───────────────────────────────────────────────────────
+const DASHBOARD_KEY = "sflow_dashboard_v1";
+
+function loadProjects(userId) {
+  try {
+    const key = userId ? `${DASHBOARD_KEY}_${userId}` : DASHBOARD_KEY;
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch { return []; }
+}
+
+function saveProjects(projects, userId) {
+  try {
+    const key = userId ? `${DASHBOARD_KEY}_${userId}` : DASHBOARD_KEY;
+    localStorage.setItem(key, JSON.stringify(projects));
+  } catch(e) { console.warn("Could not save projects", e); }
+}
+
+function addProjectToDashboard(entry, userId) {
+  try {
+    const projects = loadProjects(userId);
+    const existing = projects.find(p => p.id === entry.id);
+    if (existing) return; // already tracked
+    projects.unshift({
+      ...entry,
+      status: "Planning",
+      progress: 0,
+      tasks: [],
+      notes: [],
+      addedAt: new Date().toLocaleString(),
+      updatedAt: new Date().toLocaleString(),
+    });
+    saveProjects(projects, userId);
+  } catch(e) { console.warn("Could not add project", e); }
+}
+
+const STATUS_COLORS = {
+  "Planning": "#D97706",
+  "In Progress": "#1A7A3C",
+  "Completed": "#059669",
+  "Post-Execution": "#6A1B9A",
+};
+
+const STATUS_BG = {
+  "Planning": "#FEF3C7",
+  "In Progress": "#E8F5EC",
+  "Completed": "#D1FAE5",
+  "Post-Execution": "#F3E8FF",
+};
+
 // ─── SHARE HELPERS ────────────────────────────────────────────────────────────
 function encodePlan(data) {
   try { return btoa(encodeURIComponent(JSON.stringify(data))); } catch { return ""; }
@@ -899,7 +1194,7 @@ function PlanSection({ icon, title, content }) {
 }
 
 // ─── LANDING PAGE ─────────────────────────────────────────────────────────────
-function LandingPage({ onStart, onHistory }) {
+function LandingPage({ onStart, onHistory, onDashboard }) {
   const features = [
     { icon:"🎯", title:"Industry-Specific Plans", desc:"9 industries, dozens of project types. Every plan tailored to your exact sector." },
     { icon:"⚡", title:"Plans in 30 Seconds", desc:"Describe your project. S-Flow structures objectives, timeline, tasks, risks, and comms." },
@@ -925,6 +1220,9 @@ function LandingPage({ onStart, onHistory }) {
             </button>
             <button onClick={onHistory} style={{ background:"transparent", color:"#fff", border:"2px solid rgba(255,255,255,0.45)", padding:"15px 28px", fontFamily:"monospace", fontSize:12, letterSpacing:2, textTransform:"uppercase", cursor:"pointer", borderRadius:8, fontWeight:700 }}>
               📂 Saved Plans
+            </button>
+            <button onClick={onDashboard} style={{ background:"transparent", color:"#fff", border:"2px solid rgba(255,255,255,0.45)", padding:"15px 28px", fontFamily:"monospace", fontSize:12, letterSpacing:2, textTransform:"uppercase", cursor:"pointer", borderRadius:8, fontWeight:700 }}>
+              📊 Dashboard
             </button>
           </div>
         </div>
@@ -1015,6 +1313,7 @@ function HistoryPage({ onBack, onLoadPlan }) {
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 function SFlow({ session, onLogout }) {
   const [screen, setScreen] = useState("landing");
+  const [dashboardProject, setDashboardProject] = useState(null);
   const [selectedIndustry, setSelectedIndustry] = useState(null);
   const [selectedProject, setSelectedProject] = useState("");
   const [openSections, setOpenSections] = useState({});
@@ -1093,7 +1392,8 @@ function SFlow({ session, onLogout }) {
   };
 
   const goBack = () => {
-    if (screen === "project") { setScreen("industry"); setSelectedIndustry(null); }
+    if (screen === "dashboard") setScreen("landing");
+    else if (screen === "project") { setScreen("industry"); setSelectedIndustry(null); }
     else if (screen === "form") setScreen("project");
     else if (screen === "plan") setScreen("form");
     else if (screen === "history") setScreen("landing");
@@ -1218,6 +1518,7 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
         </div>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <button style={S.btnGhost} onClick={() => setScreen("dashboard")}>📊 Dashboard</button>
         <button style={S.btnGhost} onClick={() => setScreen("history")}>📂 Saved Plans</button>
         <button style={S.btnGhost} onClick={() => setScreen("landing")}>Home</button>
         {showBack && <button style={S.btnOutline} onClick={goBack}>← Back</button>}
@@ -1248,9 +1549,27 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
       <style>{CSS}</style>
 
       {/* LANDING */}
-      {screen === "landing" && <LandingPage onStart={() => setScreen("industry")} onHistory={() => setScreen("history")} />}
+      {screen === "landing" && <LandingPage onStart={() => setScreen("industry")} onHistory={() => setScreen("history")} onDashboard={() => setScreen("dashboard")} />}
 
       {/* HISTORY */}
+      {screen === "dashboard" && (
+        <>
+          <Header showBack={true} />
+          <DashboardPage
+            userId={session?.user?.id}
+            onBack={() => setScreen("landing")}
+            onViewPlan={(project) => {
+              setPlan(project.plan);
+              setRawPlan(project.rawPlan || "");
+              setSelectedIndustry(INDUSTRIES.find(i => i.id === project.industryId) || null);
+              setSelectedProject(project.projectType || "");
+              setFormData(project.formData || {});
+              setScreen("plan");
+            }}
+          />
+        </>
+      )}
+
       {screen === "history" && (
         <>
           <Header showBack={true} />
@@ -1427,6 +1746,18 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
             <button style={S.btnOutline} onClick={downloadTxt}>⬇ Download Text</button>
             <button style={S.btnGhost} onClick={sharePlan}>🔗 Share Plan</button>
             <button style={S.btnGhost} onClick={() => setScreen("industry")}>+ New Plan</button>
+            <button style={{ ...S.btnGhost, borderColor:"#1A7A3C", color:"#1A7A3C", fontWeight:700 }} onClick={() => {
+              const entry = {
+                id: Date.now(),
+                projectName: formData.projectName,
+                industry: ind?.name,
+                industryId: ind?.id,
+                projectType: selectedProject,
+                plan, rawPlan, formData,
+              };
+              addProjectToDashboard(entry, session?.user?.id);
+              setScreen("dashboard");
+            }}>📊 Track This Project</button>
             {shareMsg && <div style={S.successBox}>✓ {shareMsg}</div>}
           </div>
 
