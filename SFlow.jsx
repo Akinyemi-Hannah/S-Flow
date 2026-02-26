@@ -1280,8 +1280,8 @@ function LandingPage({ onStart, onHistory, onDashboard }) {
 }
 
 // ─── HISTORY PAGE ─────────────────────────────────────────────────────────────
-function HistoryPage({ onBack, onLoadPlan }) {
-  const history = loadHistory(session?.user?.id);
+function HistoryPage({ onBack, onLoadPlan, userId }) {
+  const history = loadHistory(userId);
   return (
     <div style={{ maxWidth:780, margin:"0 auto", padding:"40px" }}>
       <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:28 }}>
@@ -1573,7 +1573,7 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
       {screen === "history" && (
         <>
           <Header showBack={true} />
-          <HistoryPage onBack={() => setScreen("landing")} onLoadPlan={h => {
+          <HistoryPage userId={session?.user?.id} onBack={() => setScreen("landing")} onLoadPlan={h => {
             setPlan(h.plan); setRawPlan(h.rawPlan || "");
             setSelectedIndustry(INDUSTRIES.find(i => i.id === h.industryId) || null);
             setSelectedProject(h.projectType || ""); setFormData(h.formData || {});
