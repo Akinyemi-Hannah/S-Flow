@@ -966,12 +966,12 @@ function extractTasksFromPlan(tasksText) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    const match = trimmed.match(/^(?:\d+[\.\)]\s*|[-•*]\s*|[A-Z]\.\s*)(.+)/);
+    const match = trimmed.match(/^(?:\d+[\.)\s*|[-*]\s*|[A-Z]\.\s*)(.+)/);
     if (match) {
       const taskText = match[1].trim();
-      if (taskText.length > 10 && !taskText.match(/^(phase|stage|week|month|day|section)/i)) {
+      if (taskText.length > 10) {
         const cleaned = taskText
-          .replace(/\s*[-–]\s*(Role|Responsible|Owner|Lead|Duration|Time)[:\s].+$/i, "")
+          .replace(/\s*[-\u2013]\s*(Role|Responsible|Owner|Lead|Duration|Time)[:\s].+$/i, "")
           .replace(/\s*\((?:Project Manager|Coordinator|Director|Officer|Lead|Team|Staff|Volunteer)[^)]*\)/gi, "")
           .trim();
         if (cleaned.length > 8) {
@@ -980,37 +980,12 @@ function extractTasksFromPlan(tasksText) {
       }
     }
   }
-  if (tasks.length === 0) {
-    const sentences = tasksText.split(/[\.\n]/).filter(s => s.trim().length > 15);
-    return sentences.slice(0, 15).map(s => ({ text: s.trim(), done: false }));
-  }
-  return tasks.slice(0, 25);
-}
-    // Match numbered items like "1.", "1)", bullet points, or lines with task-like content
-    const match = trimmed.match(/^(?:\d+[\.\)]\s*|[-•*]\s*|[A-Z]\.\s*)(.+)/);
-    if (match) {
-      const taskText = match[1].trim();
-      // Skip section headers and very short lines
-      if (taskText.length > 10 && !taskText.match(/^(phase|stage|week|month|day|section)/i)) {
-        // Remove role assignments like "(Project Manager)" or "- Role: X"
-        const cleaned = taskText
-          .replace(/\s*[-–]\s*(Role|Responsible|Owner|Lead|Duration|Time)[:\s].+$/i, "")
-          .replace(/\s*\((?:Project Manager|Coordinator|Director|Officer|Lead|Team|Staff|Volunteer)[^)]*\)/gi, "")
-          .trim();
-        if (cleaned.length > 8) {
-          tasks.push({ text: cleaned, done: false });
-        }
-      }
-    }
-  }
-  // If no numbered/bulleted tasks found, try splitting by common task patterns
   if (tasks.length === 0) {
     const sentences = tasksText.split(/[.\n]/).filter(s => s.trim().length > 15);
     return sentences.slice(0, 15).map(s => ({ text: s.trim(), done: false }));
   }
-  return tasks.slice(0, 25); // cap at 25 tasks
+  return tasks.slice(0, 25);
 }
-
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const S = {
   app: { minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"Georgia, 'Times New Roman', serif" },
