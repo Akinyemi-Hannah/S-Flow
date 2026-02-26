@@ -961,8 +961,7 @@ function parsePlan(raw) {
 // ─── EXTRACT TASKS FROM PLAN TEXT ────────────────────────────────────────────
 function extractTasksFromPlan(tasksText) {
   if (!tasksText) return [];
-  const lines = tasksText.split("
-");
+  const lines = tasksText.split("\n");
   const tasks = [];
   for (const line of lines) {
     const trimmed = line.trim();
@@ -986,8 +985,7 @@ function extractTasksFromPlan(tasksText) {
   }
   // If no numbered/bulleted tasks found, try splitting by common task patterns
   if (tasks.length === 0) {
-    const sentences = tasksText.split(/[.
-]/).filter(s => s.trim().length > 15);
+    const sentences = tasksText.split(/[.\n]/).filter(s => s.trim().length > 15);
     return sentences.slice(0, 15).map(s => ({ text: s.trim(), done: false }));
   }
   return tasks.slice(0, 25); // cap at 25 tasks
