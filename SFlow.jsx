@@ -1,5 +1,229 @@
 import { useState, useEffect, useRef } from "react";
 
+// ─── SUPABASE ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL = "https://fwkyipqtbncxossqrgeb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_qtV-YXr1d70nH5TUE1K5Ag_HcYke88D";
+
+async function supabase(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${options.token || SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": options.prefer || "",
+      ...options.headers,
+    },
+    method: options.method || "GET",
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error_description || `Error ${res.status}`);
+  }
+  return options.method === "DELETE" || res.status === 204 ? null : res.json().catch(() => null);
+}
+
+async function authFetch(path, body, method = "POST") {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
+    method,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.message || "Auth error");
+  return data;
+}
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem("sflow_session") || "null"); } catch { return null; }
+}
+function setSession(s) {
+  if (s) localStorage.setItem("sflow_session", JSON.stringify(s));
+  else localStorage.removeItem("sflow_session");
+}
+
+// ─── AUTH COLORS ──────────────────────────────────────────────────────────────
+const AC = {
+  bg: "#F7FDF9", white: "#FFFFFF", green: "#1A7A3C", greenDark: "#145F2E",
+  text: "#0D2B1A", muted: "#4A7A5A", dim: "#8AB89A", border: "#C8E6D0",
+  card: "#F0FAF2", danger: "#DC2626", dangerLight: "#FEE2E2",
+  success: "#059669", successLight: "#D1FAE5",
+};
+
+// ─── AUTH SCREEN ─────────────────────────────────────────────────────────────
+function AuthScreen({ onAuth }) {
+  const [mode, setMode] = useState("login"); // login | signup | reset
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const inputStyle = {
+    width: "100%", background: AC.bg, border: `1.5px solid ${AC.border}`,
+    borderRadius: 8, color: AC.text, padding: "12px 16px", fontSize: 15,
+    fontFamily: "Georgia, serif", outline: "none", boxSizing: "border-box",
+    transition: "border-color 0.18s",
+  };
+  const focus = e => { e.target.style.borderColor = AC.green; e.target.style.boxShadow = `0 0 0 3px ${AC.green}22`; };
+  const blur = e => { e.target.style.borderColor = AC.border; e.target.style.boxShadow = "none"; };
+
+  const handleSubmit = async () => {
+    setError(""); setSuccess(""); setLoading(true);
+    try {
+      if (mode === "login") {
+        const data = await authFetch("/token?grant_type=password", { email, password });
+        setSession(data);
+        onAuth(data);
+      } else if (mode === "signup") {
+        if (!name.trim()) { setError("Please enter your name."); setLoading(false); return; }
+        const data = await authFetch("/signup", { email, password, data: { full_name: name } });
+        if (data.access_token) {
+          setSession(data);
+          onAuth(data);
+        } else {
+          setSuccess("Account created! Check your email to confirm, then log in.");
+          setMode("login");
+        }
+      } else if (mode === "reset") {
+        await authFetch("/recover", { email });
+        setSuccess("Password reset email sent! Check your inbox.");
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKey = e => { if (e.key === "Enter") handleSubmit(); };
+
+  return (
+    <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${AC.greenDark} 0%, ${AC.green} 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "Georgia, serif" }}>
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 20% 80%, rgba(255,255,255,0.06) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%)", pointerEvents: "none" }} />
+      <div style={{ position: "relative", background: AC.white, borderRadius: 16, padding: "40px 36px", width: "100%", maxWidth: 420, boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 5, color: AC.green, fontFamily: "Georgia, serif", textTransform: "uppercase", lineHeight: 1 }}>SPHRAGIS</div>
+          <div style={{ fontSize: 11, color: AC.muted, fontFamily: "monospace", letterSpacing: 2, marginTop: 4, textTransform: "uppercase" }}>The Good Operations</div>
+          <div style={{ width: 40, height: 3, background: AC.green, borderRadius: 2, margin: "12px auto 0" }} />
+        </div>
+
+        {/* Mode tabs */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 28, background: AC.card, borderRadius: 8, padding: 4 }}>
+          {[["login", "Log In"], ["signup", "Sign Up"]].map(([m, label]) => (
+            <button key={m} onClick={() => { setMode(m); setError(""); setSuccess(""); }} style={{ flex: 1, padding: "9px", fontFamily: "monospace", fontSize: 12, letterSpacing: 1, textTransform: "uppercase", cursor: "pointer", borderRadius: 6, border: "none", fontWeight: 700, background: mode === m ? AC.green : "transparent", color: mode === m ? "#fff" : AC.muted, transition: "all 0.18s" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === "reset" && (
+          <div style={{ fontSize: 13, color: AC.muted, marginBottom: 20, lineHeight: 1.6, fontFamily: "monospace" }}>
+            Enter your email and we'll send you a link to reset your password.
+          </div>
+        )}
+
+        {/* Fields */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {mode === "signup" && (
+            <div>
+              <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Full Name</label>
+              <input style={inputStyle} placeholder="Your full name" value={name} onChange={e => setName(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
+            </div>
+          )}
+          <div>
+            <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Email Address</label>
+            <input style={inputStyle} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
+          </div>
+          {mode !== "reset" && (
+            <div>
+              <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Password</label>
+              <input style={inputStyle} type="password" placeholder={mode === "signup" ? "Min. 6 characters" : "Your password"} value={password} onChange={e => setPassword(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
+            </div>
+          )}
+        </div>
+
+        {/* Error / Success */}
+        {error && <div style={{ background: AC.dangerLight, border: `1px solid ${AC.danger}`, borderRadius: 8, padding: "10px 14px", color: AC.danger, fontSize: 13, marginTop: 14, fontFamily: "monospace" }}>{error}</div>}
+        {success && <div style={{ background: AC.successLight, border: `1px solid ${AC.success}`, borderRadius: 8, padding: "10px 14px", color: AC.success, fontSize: 13, marginTop: 14, fontFamily: "monospace" }}>{success}</div>}
+
+        {/* Submit */}
+        <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", marginTop: 22, background: loading ? AC.dim : AC.green, color: "#fff", border: "none", padding: "14px", fontFamily: "monospace", fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", borderRadius: 8, fontWeight: 700, transition: "all 0.18s" }}>
+          {loading ? "Please wait..." : mode === "login" ? "Log In →" : mode === "signup" ? "Create Account →" : "Send Reset Email →"}
+        </button>
+
+        {/* Footer links */}
+        <div style={{ textAlign: "center", marginTop: 18 }}>
+          {mode !== "reset" && (
+            <button onClick={() => { setMode("reset"); setError(""); setSuccess(""); }} style={{ background: "none", border: "none", color: AC.muted, fontSize: 12, fontFamily: "monospace", cursor: "pointer", textDecoration: "underline" }}>
+              Forgot password?
+            </button>
+          )}
+          {mode === "reset" && (
+            <button onClick={() => { setMode("login"); setError(""); setSuccess(""); }} style={{ background: "none", border: "none", color: AC.muted, fontSize: 12, fontFamily: "monospace", cursor: "pointer", textDecoration: "underline" }}>
+              Back to login
+            </button>
+          )}
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: 24, fontSize: 11, color: AC.dim, fontFamily: "monospace", letterSpacing: 1 }}>
+          S-Flow by SPHRAGIS — The Good Operations
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ROOT WRAPPER ─────────────────────────────────────────────────────────────
+export default function Root() {
+  const [session, setSession] = useState(() => getSession());
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    // Verify stored session is still valid
+    const s = getSession();
+    if (s?.access_token) {
+      fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${s.access_token}` }
+      }).then(r => {
+        if (r.ok) setSession(s);
+        else { setSession(null); setSession(null); localStorage.removeItem("sflow_session"); }
+      }).catch(() => setSession(s)) // if offline, trust stored session
+      .finally(() => setChecking(false));
+    } else {
+      setChecking(false);
+    }
+  }, []);
+
+  const handleAuth = (data) => {
+    setSession(data);
+  };
+
+  const handleLogout = () => {
+    setSession(null);
+    setSession(null);
+    localStorage.removeItem("sflow_session");
+  };
+
+  if (checking) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#F7FDF9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 44, height: 44, border: "4px solid #C8E6D0", borderTop: "4px solid #1A7A3C", borderRadius: "50%", animation: "spin 0.9s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!session) return <AuthScreen onAuth={handleAuth} />;
+  return <SFlow session={session} onLogout={handleLogout} />;
+}
+
+
 const C = {
   bg:"#F7FDF9",white:"#FFFFFF",card:"#F0FAF2",border:"#C8E6D0",
   green:"#1A7A3C",greenDark:"#145F2E",text:"#0D2B1A",muted:"#4A7A5A",dim:"#8AB89A",
@@ -462,14 +686,18 @@ const INDUSTRIES = [
 
 // ─── HISTORY HELPERS ─────────────────────────────────────────────────────────
 const STORAGE_KEY = "sflow_history_v2";
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
-}
-function saveToHistory(entry) {
+function loadHistory(userId) {
   try {
-    const h = loadHistory();
+    const key = userId ? `${STORAGE_KEY}_${userId}` : STORAGE_KEY;
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch { return []; }
+}
+function saveToHistory(entry, userId) {
+  try {
+    const key = userId ? `${STORAGE_KEY}_${userId}` : STORAGE_KEY;
+    const h = loadHistory(userId);
     h.unshift({ ...entry, id: Date.now(), savedAt: new Date().toLocaleString() });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(h.slice(0, 20)));
+    localStorage.setItem(key, JSON.stringify(h.slice(0, 20)));
   } catch(e) { console.warn("Could not save to history", e); }
 }
 
@@ -755,7 +983,7 @@ function LandingPage({ onStart, onHistory }) {
 
 // ─── HISTORY PAGE ─────────────────────────────────────────────────────────────
 function HistoryPage({ onBack, onLoadPlan }) {
-  const history = loadHistory();
+  const history = loadHistory(session?.user?.id);
   return (
     <div style={{ maxWidth:780, margin:"0 auto", padding:"40px" }}>
       <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:28 }}>
@@ -785,7 +1013,7 @@ function HistoryPage({ onBack, onLoadPlan }) {
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function SFlow() {
+function SFlow({ session, onLogout }) {
   const [screen, setScreen] = useState("landing");
   const [selectedIndustry, setSelectedIndustry] = useState(null);
   const [selectedProject, setSelectedProject] = useState("");
@@ -1032,7 +1260,7 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
         plan: parsed,
         rawPlan: text,
         formData,
-      });
+      }, session?.user?.id);
     } catch (err) {
       console.error("S-Flow API error:", err);
       setError(`Could not generate plan: ${err.message}. If this persists, check your API key is set correctly in your environment.`);
@@ -1074,6 +1302,13 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
         <button style={S.btnGhost} onClick={() => setScreen("history")}>📂 Saved Plans</button>
         <button style={S.btnGhost} onClick={() => setScreen("landing")}>Home</button>
         {showBack && <button style={S.btnOutline} onClick={goBack}>← Back</button>}
+        <div style={{ display:"flex", alignItems:"center", gap:8, background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:"6px 14px" }}>
+          <div style={{ width:8, height:8, borderRadius:"50%", background:C.success }} />
+          <span style={{ fontSize:11, fontFamily:"monospace", color:C.muted, maxWidth:140, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+            {session?.user?.user_metadata?.full_name || session?.user?.email || "Account"}
+          </span>
+          <button onClick={onLogout} style={{ background:"none", border:"none", color:C.danger, fontSize:11, fontFamily:"monospace", cursor:"pointer", paddingLeft:6, fontWeight:700 }}>Sign out</button>
+        </div>
       </div>
     </header>
   );
@@ -1370,3 +1605,4 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
     </div>
   );
 }
+
