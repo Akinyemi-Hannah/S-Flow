@@ -908,21 +908,29 @@ function addProjectToDashboard(entry, userId) {
     for (let i = 0; i < planLines.length; i++) {
       const line = planLines[i].trim();
       if (!line) continue;
-      const isNumbered = /^\d+[.)]\s+/.test(line);
-      const isBulleted = /^[-*]\s+/.test(line);
-      if (isNumbered || isBulleted) {
-        const taskText = line.replace(/^\d+[.)]\s+|^[-*]\s+/, "").trim();
-        if (taskText.length > 8) {
-          autoTasks.push({ text: taskText, done: false });
-        }
+      if (line.length < 8) continue;
+      // Skip section headers and short labels
+      const isHeader = /^(phase|stage|task breakdown|roles|section|week|month|day)/i.test(line);
+      if (isHeader) continue;
+      // Remove numbering, bullets, role assignments
+      const cleaned = line
+        .replace(/^\d+[.):]\s*/, "")
+        .replace(/^[-*•]\s*/, "")
+        .replace(/\s*[-|]\s*(Role|Responsible|Owner|Lead|Assigned)[^:]*:.*$/i, "")
+        .replace(/\s*\([^)]{0,40}\)$/, "")
+        .trim();
+      if (cleaned.length > 8 && cleaned.length < 200) {
+        autoTasks.push({ text: cleaned, done: false });
       }
     }
   }
+  // Cap at 20 tasks
+  const finalTasks = autoTasks.slice(0, 20);
     projects.unshift({
       ...entry,
       status: "Planning",
       progress: 0,
-      tasks: autoTasks,
+      tasks: finalTasks,
       notes: [],
       addedAt: new Date().toLocaleString(),
       updatedAt: new Date().toLocaleString(),
