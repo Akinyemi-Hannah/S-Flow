@@ -1,475 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 
-// ─── SUPABASE ─────────────────────────────────────────────────────────────────
-const SUPABASE_URL = "https://fwkyipqtbncxossqrgeb.supabase.co";
-const SUPABASE_KEY = "sb_publishable_qtV-YXr1d70nH5TUE1K5Ag_HcYke88D";
-
-async function supabase(path, options = {}) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-    headers: {
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${options.token || SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-      "Prefer": options.prefer || "",
-      ...options.headers,
-    },
-    method: options.method || "GET",
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.error_description || `Error ${res.status}`);
-  }
-  return options.method === "DELETE" || res.status === 204 ? null : res.json().catch(() => null);
-}
-
-async function authFetch(path, body, method = "POST") {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
-    method,
-    headers: {
-      "apikey": SUPABASE_KEY,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error_description || data.msg || data.message || "Auth error");
-  return data;
-}
-
-function getSession() {
-  try { return JSON.parse(localStorage.getItem("sflow_session") || "null"); } catch { return null; }
-}
-function setSession(s) {
-  if (s) localStorage.setItem("sflow_session", JSON.stringify(s));
-  else localStorage.removeItem("sflow_session");
-}
-
-// ─── AUTH COLORS ──────────────────────────────────────────────────────────────
-const AC = {
-  bg: "#F7FDF9", white: "#FFFFFF", green: "#1A7A3C", greenDark: "#145F2E",
-  text: "#0D2B1A", muted: "#4A7A5A", dim: "#8AB89A", border: "#C8E6D0",
-  card: "#F0FAF2", danger: "#DC2626", dangerLight: "#FEE2E2",
-  success: "#059669", successLight: "#D1FAE5",
-};
-
-// ─── AUTH SCREEN ─────────────────────────────────────────────────────────────
-function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState("login"); // login | signup | reset
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  const inputStyle = {
-    width: "100%", background: AC.bg, border: `1.5px solid ${AC.border}`,
-    borderRadius: 8, color: AC.text, padding: "12px 16px", fontSize: 15,
-    fontFamily: "Georgia, serif", outline: "none", boxSizing: "border-box",
-    transition: "border-color 0.18s",
-  };
-  const focus = e => { e.target.style.borderColor = AC.green; e.target.style.boxShadow = `0 0 0 3px ${AC.green}22`; };
-  const blur = e => { e.target.style.borderColor = AC.border; e.target.style.boxShadow = "none"; };
-
-  const handleSubmit = async () => {
-    setError(""); setSuccess(""); setLoading(true);
-    try {
-      if (mode === "login") {
-        const data = await authFetch("/token?grant_type=password", { email, password });
-        setSession(data);
-        onAuth(data);
-      } else if (mode === "signup") {
-        if (!name.trim()) { setError("Please enter your name."); setLoading(false); return; }
-        const data = await authFetch("/signup", { email, password, data: { full_name: name } });
-        if (data.access_token) {
-          setSession(data);
-          onAuth(data);
-        } else {
-          setSuccess("Account created! Check your email to confirm, then log in.");
-          setMode("login");
-        }
-      } else if (mode === "reset") {
-        await authFetch("/recover", { email });
-        setSuccess("Password reset email sent! Check your inbox.");
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleKey = e => { if (e.key === "Enter") handleSubmit(); };
-
-  return (
-    <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${AC.greenDark} 0%, ${AC.green} 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "Georgia, serif" }}>
-      <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 20% 80%, rgba(255,255,255,0.06) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%)", pointerEvents: "none" }} />
-      <div style={{ position: "relative", background: AC.white, borderRadius: 16, padding: "40px 36px", width: "100%", maxWidth: 420, boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 5, color: AC.green, fontFamily: "Georgia, serif", textTransform: "uppercase", lineHeight: 1 }}>SPHRAGIS</div>
-          <div style={{ fontSize: 11, color: AC.muted, fontFamily: "monospace", letterSpacing: 2, marginTop: 4, textTransform: "uppercase" }}>The Good Operations</div>
-          <div style={{ width: 40, height: 3, background: AC.green, borderRadius: 2, margin: "12px auto 0" }} />
-        </div>
-
-        {/* Mode tabs */}
-        <div style={{ display: "flex", gap: 0, marginBottom: 28, background: AC.card, borderRadius: 8, padding: 4 }}>
-          {[["login", "Log In"], ["signup", "Sign Up"]].map(([m, label]) => (
-            <button key={m} onClick={() => { setMode(m); setError(""); setSuccess(""); }} style={{ flex: 1, padding: "9px", fontFamily: "monospace", fontSize: 12, letterSpacing: 1, textTransform: "uppercase", cursor: "pointer", borderRadius: 6, border: "none", fontWeight: 700, background: mode === m ? AC.green : "transparent", color: mode === m ? "#fff" : AC.muted, transition: "all 0.18s" }}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {mode === "reset" && (
-          <div style={{ fontSize: 13, color: AC.muted, marginBottom: 20, lineHeight: 1.6, fontFamily: "monospace" }}>
-            Enter your email and we'll send you a link to reset your password.
-          </div>
-        )}
-
-        {/* Fields */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {mode === "signup" && (
-            <div>
-              <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Full Name</label>
-              <input style={inputStyle} placeholder="Your full name" value={name} onChange={e => setName(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
-            </div>
-          )}
-          <div>
-            <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Email Address</label>
-            <input style={inputStyle} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
-          </div>
-          {mode !== "reset" && (
-            <div>
-              <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Password</label>
-              <input style={inputStyle} type="password" placeholder={mode === "signup" ? "Min. 6 characters" : "Your password"} value={password} onChange={e => setPassword(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
-            </div>
-          )}
-        </div>
-
-        {/* Error / Success */}
-        {error && <div style={{ background: AC.dangerLight, border: `1px solid ${AC.danger}`, borderRadius: 8, padding: "10px 14px", color: AC.danger, fontSize: 13, marginTop: 14, fontFamily: "monospace" }}>{error}</div>}
-        {success && <div style={{ background: AC.successLight, border: `1px solid ${AC.success}`, borderRadius: 8, padding: "10px 14px", color: AC.success, fontSize: 13, marginTop: 14, fontFamily: "monospace" }}>{success}</div>}
-
-        {/* Submit */}
-        <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", marginTop: 22, background: loading ? AC.dim : AC.green, color: "#fff", border: "none", padding: "14px", fontFamily: "monospace", fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", borderRadius: 8, fontWeight: 700, transition: "all 0.18s" }}>
-          {loading ? "Please wait..." : mode === "login" ? "Log In →" : mode === "signup" ? "Create Account →" : "Send Reset Email →"}
-        </button>
-
-        {/* Footer links */}
-        <div style={{ textAlign: "center", marginTop: 18 }}>
-          {mode !== "reset" && (
-            <button onClick={() => { setMode("reset"); setError(""); setSuccess(""); }} style={{ background: "none", border: "none", color: AC.muted, fontSize: 12, fontFamily: "monospace", cursor: "pointer", textDecoration: "underline" }}>
-              Forgot password?
-            </button>
-          )}
-          {mode === "reset" && (
-            <button onClick={() => { setMode("login"); setError(""); setSuccess(""); }} style={{ background: "none", border: "none", color: AC.muted, fontSize: 12, fontFamily: "monospace", cursor: "pointer", textDecoration: "underline" }}>
-              Back to login
-            </button>
-          )}
-        </div>
-
-        <div style={{ textAlign: "center", marginTop: 24, fontSize: 11, color: AC.dim, fontFamily: "monospace", letterSpacing: 1 }}>
-          S-Flow by SPHRAGIS — The Good Operations
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── PROGRESS RING ───────────────────────────────────────────────────────────
-function ProgressRing({ percent, color, size = 64 }) {
-  const r = (size - 8) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (percent / 100) * circ;
-  return (
-    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E8F5EC" strokeWidth={7} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color || "#1A7A3C"} strokeWidth={7}
-        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        style={{ transition: "stroke-dashoffset 0.5s ease" }} />
-    </svg>
-  );
-}
-
-// ─── PROJECT TRACKER ─────────────────────────────────────────────────────────
-function ProjectTracker({ project, onBack, onUpdate }) {
-  const [tasks, setTasks] = useState(project.tasks || []);
-  const [notes, setNotes] = useState(project.notes || []);
-  const [newNote, setNewNote] = useState("");
-  const [newTask, setNewTask] = useState("");
-  const [status, setStatus] = useState(project.status || "Planning");
-
-  const completedCount = tasks.filter(t => t.done).length;
-  const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
-
-  const save = (updatedTasks, updatedNotes, updatedStatus) => {
-    const updated = {
-      ...project,
-      tasks: updatedTasks,
-      notes: updatedNotes,
-      status: updatedStatus,
-      progress: updatedTasks.length > 0 ? Math.round((updatedTasks.filter(t => t.done).length / updatedTasks.length) * 100) : 0,
-      updatedAt: new Date().toLocaleString(),
-    };
-    onUpdate(updated);
-  };
-
-  const toggleTask = (idx) => {
-    const updated = tasks.map((t, i) => i === idx ? { ...t, done: !t.done } : t);
-    setTasks(updated);
-    save(updated, notes, status);
-  };
-
-  const addTask = () => {
-    if (!newTask.trim()) return;
-    const updated = [...tasks, { text: newTask.trim(), done: false, addedAt: new Date().toLocaleString() }];
-    setTasks(updated);
-    setNewTask("");
-    save(updated, notes, status);
-  };
-
-  const removeTask = (idx) => {
-    const updated = tasks.filter((_, i) => i !== idx);
-    setTasks(updated);
-    save(updated, notes, status);
-  };
-
-  const addNote = () => {
-    if (!newNote.trim()) return;
-    const updated = [{ text: newNote.trim(), addedAt: new Date().toLocaleString() }, ...notes];
-    setNotes(updated);
-    setNewNote("");
-    save(tasks, updated, status);
-  };
-
-  const changeStatus = (s) => {
-    setStatus(s);
-    save(tasks, notes, s);
-  };
-
-  const inputStyle = {
-    flex: 1, background: "#F7FDF9", border: "1.5px solid #C8E6D0", borderRadius: 8,
-    color: "#0D2B1A", padding: "10px 14px", fontSize: 14, fontFamily: "Georgia, serif",
-    outline: "none", boxSizing: "border-box",
-  };
-
-  return (
-    <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 36px 60px" }}>
-      {/* Back + header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-        <button onClick={onBack} style={{ background: "none", border: "1px solid #C8E6D0", borderRadius: 8, padding: "8px 16px", fontFamily: "monospace", fontSize: 11, color: "#4A7A5A", cursor: "pointer", letterSpacing: 1 }}>← Back</button>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>{project.industry} · {project.projectType}</div>
-          <h2 style={{ fontSize: "clamp(18px,3vw,28px)", fontWeight: 900, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>{project.projectName}</h2>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <ProgressRing percent={progress} color={STATUS_COLORS[status]} size={72} />
-          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", marginTop: 4 }}>{progress}% done</div>
-        </div>
-      </div>
-
-      {/* Status selector */}
-      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Project Status</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {["Planning", "In Progress", "Completed", "Post-Execution"].map(s => (
-            <button key={s} onClick={() => changeStatus(s)} style={{
-              padding: "8px 18px", borderRadius: 20, border: `1.5px solid ${STATUS_COLORS[s]}`,
-              background: status === s ? STATUS_COLORS[s] : STATUS_BG[s],
-              color: status === s ? "#fff" : STATUS_COLORS[s],
-              fontFamily: "monospace", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
-            }}>{s}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tasks */}
-      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
-          Task Checklist — {completedCount}/{tasks.length} completed
-        </div>
-        {tasks.length === 0 && (
-          <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace", marginBottom: 14 }}>No tasks yet. Add tasks from your plan below.</div>
-        )}
-        {tasks.map((task, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #F0FAF2" }}>
-            <input type="checkbox" checked={task.done} onChange={() => toggleTask(i)}
-              style={{ width: 18, height: 18, accentColor: "#1A7A3C", cursor: "pointer", flexShrink: 0 }} />
-            <span style={{ flex: 1, fontSize: 14, color: task.done ? "#8AB89A" : "#0D2B1A", textDecoration: task.done ? "line-through" : "none", fontFamily: "Georgia, serif" }}>{task.text}</span>
-            <button onClick={() => removeTask(i)} style={{ background: "none", border: "none", color: "#DC2626", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
-          </div>
-        ))}
-        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-          <input style={inputStyle} placeholder="Add a task..." value={newTask} onChange={e => setNewTask(e.target.value)} onKeyDown={e => e.key === "Enter" && addTask()} />
-          <button onClick={addTask} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, whiteSpace: "nowrap" }}>+ Add</button>
-        </div>
-      </div>
-
-      {/* Field Notes */}
-      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Field Notes & Updates</div>
-        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-          <textarea style={{ ...inputStyle, minHeight: 72, resize: "vertical" }} placeholder="Log what's happening on the ground — decisions made, changes, wins, blockers..." value={newNote} onChange={e => setNewNote(e.target.value)} />
-          <button onClick={addNote} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, alignSelf: "flex-end", whiteSpace: "nowrap" }}>+ Log</button>
-        </div>
-        {notes.length === 0 && (
-          <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace" }}>No notes yet. Start logging your project activity.</div>
-        )}
-        {notes.map((note, i) => (
-          <div key={i} style={{ background: "#F0FAF2", border: "1px solid #C8E6D0", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
-            <div style={{ fontSize: 14, color: "#0D2B1A", lineHeight: 1.6, fontFamily: "Georgia, serif", marginBottom: 6 }}>{note.text}</div>
-            <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{note.addedAt}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* View original plan */}
-      <div style={{ textAlign: "center", padding: "16px 0", borderTop: "1px solid #C8E6D0", color: "#8AB89A", fontFamily: "monospace", fontSize: 11, letterSpacing: 1 }}>
-        S-Flow by SPHRAGIS — Project Tracker · Last updated {project.updatedAt}
-      </div>
-    </div>
-  );
-}
-
-// ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function DashboardPage({ userId, onBack, onViewPlan }) {
-  const [projects, setProjects] = useState(() => loadProjects(userId));
-  const [activeProject, setActiveProject] = useState(null);
-
-  const updateProject = (updated) => {
-    const newProjects = projects.map(p => p.id === updated.id ? updated : p);
-    setProjects(newProjects);
-    saveProjects(newProjects, userId);
-    setActiveProject(updated);
-  };
-
-  const removeProject = (id) => {
-    const newProjects = projects.filter(p => p.id !== id);
-    setProjects(newProjects);
-    saveProjects(newProjects, userId);
-  };
-
-  if (activeProject) {
-    return (
-      <>
-        <div style={{ borderBottom: "2px solid #1A7A3C", padding: "0 36px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", height: 68, position: "sticky", top: 0, zIndex: 100 }}>
-          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 4, color: "#1A7A3C", fontFamily: "Georgia, serif" }}>SPHRAGIS</div>
-          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 2, textTransform: "uppercase" }}>Project Tracker</div>
-        </div>
-        <ProjectTracker project={activeProject} onBack={() => setActiveProject(null)} onUpdate={updateProject} />
-      </>
-    );
-  }
-
-  const statusCounts = { "Planning": 0, "In Progress": 0, "Completed": 0, "Post-Execution": 0 };
-  projects.forEach(p => { if (statusCounts[p.status] !== undefined) statusCounts[p.status]++; });
-
-  return (
-    <div style={{ maxWidth: 920, margin: "0 auto", padding: "32px 36px 60px" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
-        <button onClick={onBack} style={{ background: "none", border: "1px solid #C8E6D0", borderRadius: 8, padding: "8px 16px", fontFamily: "monospace", fontSize: 11, color: "#4A7A5A", cursor: "pointer", letterSpacing: 1 }}>← Back</button>
-        <div>
-          <h2 style={{ fontSize: "clamp(20px,3vw,30px)", fontWeight: 900, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>Project Dashboard</h2>
-          <div style={{ fontSize: 12, color: "#4A7A5A", fontFamily: "monospace" }}>{projects.length} project{projects.length !== 1 ? "s" : ""} being tracked</div>
-        </div>
-      </div>
-
-      {/* Summary cards */}
-      {projects.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
-          {Object.entries(statusCounts).map(([status, count]) => (
-            <div key={status} style={{ background: STATUS_BG[status], border: `1px solid ${STATUS_COLORS[status]}33`, borderRadius: 10, padding: "14px 16px", borderLeft: `4px solid ${STATUS_COLORS[status]}` }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: STATUS_COLORS[status], fontFamily: "monospace" }}>{count}</div>
-              <div style={{ fontSize: 11, color: STATUS_COLORS[status], fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>{status}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Empty state */}
-      {projects.length === 0 && (
-        <div style={{ textAlign: "center", padding: "60px 40px", background: "#fff", border: "1px solid #C8E6D0", borderRadius: 12, color: "#4A7A5A", fontFamily: "monospace", fontSize: 13 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>No projects tracked yet</div>
-          <div style={{ color: "#8AB89A" }}>Generate a plan and click "Track This Project" to start monitoring it here.</div>
-        </div>
-      )}
-
-      {/* Project cards */}
-      {projects.map(project => (
-        <div key={project.id} style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 12, padding: "20px 22px", marginBottom: 14, display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ flexShrink: 0 }}>
-            <ProgressRing percent={project.progress || 0} color={STATUS_COLORS[project.status]} size={64} />
-            <div style={{ textAlign: "center", fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", marginTop: 2 }}>{project.progress || 0}%</div>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#0D2B1A", marginBottom: 4, fontFamily: "Georgia, serif" }}>{project.projectName}</div>
-            <div style={{ fontSize: 12, color: "#4A7A5A", fontFamily: "monospace", marginBottom: 8 }}>{project.industry} · {project.projectType}</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: STATUS_COLORS[project.status], background: STATUS_BG[project.status], border: `1px solid ${STATUS_COLORS[project.status]}44`, padding: "3px 10px", borderRadius: 20 }}>{project.status}</span>
-              <span style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{project.tasks?.length || 0} tasks · {project.notes?.length || 0} notes</span>
-              <span style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>Updated {project.updatedAt}</span>
-            </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
-            <button onClick={() => setActiveProject(project)} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontFamily: "monospace", fontSize: 11, letterSpacing: 1, cursor: "pointer", fontWeight: 700, textTransform: "uppercase" }}>Track →</button>
-            <button onClick={() => removeProject(project.id)} style={{ background: "none", color: "#DC2626", border: "1px solid #DC262633", padding: "7px 18px", borderRadius: 8, fontFamily: "monospace", fontSize: 11, cursor: "pointer" }}>Remove</button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── ROOT WRAPPER ─────────────────────────────────────────────────────────────
-export default function Root() {
-  const [session, setSession] = useState(() => getSession());
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    // Verify stored session is still valid
-    const s = getSession();
-    if (s?.access_token) {
-      fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${s.access_token}` }
-      }).then(r => {
-        if (r.ok) setSession(s);
-        else { setSession(null); setSession(null); localStorage.removeItem("sflow_session"); }
-      }).catch(() => setSession(s)) // if offline, trust stored session
-      .finally(() => setChecking(false));
-    } else {
-      setChecking(false);
-    }
-  }, []);
-
-  const handleAuth = (data) => {
-    setSession(data);
-  };
-
-  const handleLogout = () => {
-    setSession(null);
-    setSession(null);
-    localStorage.removeItem("sflow_session");
-  };
-
-  if (checking) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#F7FDF9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 44, height: 44, border: "4px solid #C8E6D0", borderTop: "4px solid #1A7A3C", borderRadius: "50%", animation: "spin 0.9s linear infinite" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
-  if (!session) return <AuthScreen onAuth={handleAuth} />;
-  return <SFlow session={session} onLogout={handleLogout} />;
-}
-
-
 const C = {
   bg:"#F7FDF9",white:"#FFFFFF",card:"#F0FAF2",border:"#C8E6D0",
   green:"#1A7A3C",greenDark:"#145F2E",text:"#0D2B1A",muted:"#4A7A5A",dim:"#8AB89A",
@@ -930,6 +460,424 @@ const INDUSTRIES = [
   },
 ];
 
+// ─── SUPABASE ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL = "https://fwkyipqtbncxossqrgeb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_qtV-YXr1d70nH5TUE1K5Ag_HcYke88D";
+
+async function supabase(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${options.token || SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": options.prefer || "",
+      ...options.headers,
+    },
+    method: options.method || "GET",
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error_description || `Error ${res.status}`);
+  }
+  return options.method === "DELETE" || res.status === 204 ? null : res.json().catch(() => null);
+}
+
+async function authFetch(path, body, method = "POST") {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
+    method,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.message || "Auth error");
+  return data;
+}
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem("sflow_session") || "null"); } catch { return null; }
+}
+function setSession(s) {
+  if (s) localStorage.setItem("sflow_session", JSON.stringify(s));
+  else localStorage.removeItem("sflow_session");
+}
+
+// ─── AUTH COLORS ──────────────────────────────────────────────────────────────
+const AC = {
+  bg: "#F7FDF9", white: "#FFFFFF", green: "#1A7A3C", greenDark: "#145F2E",
+  text: "#0D2B1A", muted: "#4A7A5A", dim: "#8AB89A", border: "#C8E6D0",
+  card: "#F0FAF2", danger: "#DC2626", dangerLight: "#FEE2E2",
+  success: "#059669", successLight: "#D1FAE5",
+};
+
+// ─── AUTH SCREEN ─────────────────────────────────────────────────────────────
+function AuthScreen({ onAuth }) {
+  const [mode, setMode] = useState("login"); // login | signup | reset
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const inputStyle = {
+    width: "100%", background: AC.bg, border: `1.5px solid ${AC.border}`,
+    borderRadius: 8, color: AC.text, padding: "12px 16px", fontSize: 15,
+    fontFamily: "Georgia, serif", outline: "none", boxSizing: "border-box",
+    transition: "border-color 0.18s",
+  };
+  const focus = e => { e.target.style.borderColor = AC.green; e.target.style.boxShadow = `0 0 0 3px ${AC.green}22`; };
+  const blur = e => { e.target.style.borderColor = AC.border; e.target.style.boxShadow = "none"; };
+
+  const handleSubmit = async () => {
+    setError(""); setSuccess(""); setLoading(true);
+    try {
+      if (mode === "login") {
+        const data = await authFetch("/token?grant_type=password", { email, password });
+        setSession(data);
+        onAuth(data);
+      } else if (mode === "signup") {
+        if (!name.trim()) { setError("Please enter your name."); setLoading(false); return; }
+        const data = await authFetch("/signup", { email, password, data: { full_name: name } });
+        if (data.access_token) {
+          setSession(data);
+          onAuth(data);
+        } else {
+          setSuccess("Account created! Check your email to confirm, then log in.");
+          setMode("login");
+        }
+      } else if (mode === "reset") {
+        await authFetch("/recover", { email });
+        setSuccess("Password reset email sent! Check your inbox.");
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKey = e => { if (e.key === "Enter") handleSubmit(); };
+
+  return (
+    <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${AC.greenDark} 0%, ${AC.green} 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "Georgia, serif" }}>
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 20% 80%, rgba(255,255,255,0.06) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%)", pointerEvents: "none" }} />
+      <div style={{ position: "relative", background: AC.white, borderRadius: 16, padding: "40px 36px", width: "100%", maxWidth: 420, boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 5, color: AC.green, fontFamily: "Georgia, serif", textTransform: "uppercase", lineHeight: 1 }}>SPHRAGIS</div>
+          <div style={{ fontSize: 11, color: AC.muted, fontFamily: "monospace", letterSpacing: 2, marginTop: 4, textTransform: "uppercase" }}>The Good Operations</div>
+          <div style={{ width: 40, height: 3, background: AC.green, borderRadius: 2, margin: "12px auto 0" }} />
+        </div>
+
+        {/* Mode tabs */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 28, background: AC.card, borderRadius: 8, padding: 4 }}>
+          {[["login", "Log In"], ["signup", "Sign Up"]].map(([m, label]) => (
+            <button key={m} onClick={() => { setMode(m); setError(""); setSuccess(""); }} style={{ flex: 1, padding: "9px", fontFamily: "monospace", fontSize: 12, letterSpacing: 1, textTransform: "uppercase", cursor: "pointer", borderRadius: 6, border: "none", fontWeight: 700, background: mode === m ? AC.green : "transparent", color: mode === m ? "#fff" : AC.muted, transition: "all 0.18s" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === "reset" && (
+          <div style={{ fontSize: 13, color: AC.muted, marginBottom: 20, lineHeight: 1.6, fontFamily: "monospace" }}>
+            Enter your email and we'll send you a link to reset your password.
+          </div>
+        )}
+
+        {/* Fields */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {mode === "signup" && (
+            <div>
+              <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Full Name</label>
+              <input style={inputStyle} placeholder="Your full name" value={name} onChange={e => setName(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
+            </div>
+          )}
+          <div>
+            <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Email Address</label>
+            <input style={inputStyle} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
+          </div>
+          {mode !== "reset" && (
+            <div>
+              <label style={{ display: "block", fontSize: 11, color: AC.muted, marginBottom: 6, fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>Password</label>
+              <input style={inputStyle} type="password" placeholder={mode === "signup" ? "Min. 6 characters" : "Your password"} value={password} onChange={e => setPassword(e.target.value)} onFocus={focus} onBlur={blur} onKeyDown={handleKey} />
+            </div>
+          )}
+        </div>
+
+        {/* Error / Success */}
+        {error && <div style={{ background: AC.dangerLight, border: `1px solid ${AC.danger}`, borderRadius: 8, padding: "10px 14px", color: AC.danger, fontSize: 13, marginTop: 14, fontFamily: "monospace" }}>{error}</div>}
+        {success && <div style={{ background: AC.successLight, border: `1px solid ${AC.success}`, borderRadius: 8, padding: "10px 14px", color: AC.success, fontSize: 13, marginTop: 14, fontFamily: "monospace" }}>{success}</div>}
+
+        {/* Submit */}
+        <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", marginTop: 22, background: loading ? AC.dim : AC.green, color: "#fff", border: "none", padding: "14px", fontFamily: "monospace", fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", borderRadius: 8, fontWeight: 700, transition: "all 0.18s" }}>
+          {loading ? "Please wait..." : mode === "login" ? "Log In →" : mode === "signup" ? "Create Account →" : "Send Reset Email →"}
+        </button>
+
+        {/* Footer links */}
+        <div style={{ textAlign: "center", marginTop: 18 }}>
+          {mode !== "reset" && (
+            <button onClick={() => { setMode("reset"); setError(""); setSuccess(""); }} style={{ background: "none", border: "none", color: AC.muted, fontSize: 12, fontFamily: "monospace", cursor: "pointer", textDecoration: "underline" }}>
+              Forgot password?
+            </button>
+          )}
+          {mode === "reset" && (
+            <button onClick={() => { setMode("login"); setError(""); setSuccess(""); }} style={{ background: "none", border: "none", color: AC.muted, fontSize: 12, fontFamily: "monospace", cursor: "pointer", textDecoration: "underline" }}>
+              Back to login
+            </button>
+          )}
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: 24, fontSize: 11, color: AC.dim, fontFamily: "monospace", letterSpacing: 1 }}>
+          S-Flow by SPHRAGIS — The Good Operations
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PROGRESS RING ───────────────────────────────────────────────────────────
+function ProgressRing({ percent, color, size = 64 }) {
+  const r = (size - 8) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (percent / 100) * circ;
+  return (
+    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E8F5EC" strokeWidth={7} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color || "#1A7A3C"} strokeWidth={7}
+        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+        style={{ transition: "stroke-dashoffset 0.5s ease" }} />
+    </svg>
+  );
+}
+
+// ─── PROJECT TRACKER ─────────────────────────────────────────────────────────
+function ProjectTracker({ project, onBack, onUpdate }) {
+  const [tasks, setTasks] = useState(project.tasks || []);
+  const [notes, setNotes] = useState(project.notes || []);
+  const [newNote, setNewNote] = useState("");
+  const [status, setStatus] = useState(project.status || "Planning");
+
+  const completedCount = tasks.filter(t => t.done).length;
+  const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+
+  const save = (updatedTasks, updatedNotes, updatedStatus) => {
+    const updated = {
+      ...project,
+      tasks: updatedTasks,
+      notes: updatedNotes,
+      status: updatedStatus,
+      progress: updatedTasks.length > 0 ? Math.round((updatedTasks.filter(t => t.done).length / updatedTasks.length) * 100) : 0,
+      updatedAt: new Date().toLocaleString(),
+    };
+    onUpdate(updated);
+  };
+
+  const toggleTask = (idx) => {
+    const updated = tasks.map((t, i) => i === idx ? { ...t, done: !t.done } : t);
+    setTasks(updated);
+    save(updated, notes, status);
+  };
+
+  const removeTask = (idx) => {
+    const updated = tasks.filter((_, i) => i !== idx);
+    setTasks(updated);
+    save(updated, notes, status);
+  };
+
+  const addNote = () => {
+    if (!newNote.trim()) return;
+    const updated = [{ text: newNote.trim(), addedAt: new Date().toLocaleString() }, ...notes];
+    setNotes(updated);
+    setNewNote("");
+    save(tasks, updated, status);
+  };
+
+  const changeStatus = (s) => {
+    setStatus(s);
+    save(tasks, notes, s);
+  };
+
+  const inputStyle = {
+    flex: 1, background: "#F7FDF9", border: "1.5px solid #C8E6D0", borderRadius: 8,
+    color: "#0D2B1A", padding: "10px 14px", fontSize: 14, fontFamily: "Georgia, serif",
+    outline: "none", boxSizing: "border-box",
+  };
+
+  return (
+    <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 36px 60px" }}>
+      {/* Back + header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid #C8E6D0", borderRadius: 8, padding: "8px 16px", fontFamily: "monospace", fontSize: 11, color: "#4A7A5A", cursor: "pointer", letterSpacing: 1 }}>← Back</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>{project.industry} · {project.projectType}</div>
+          <h2 style={{ fontSize: "clamp(18px,3vw,28px)", fontWeight: 900, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>{project.projectName}</h2>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <ProgressRing percent={progress} color={STATUS_COLORS[status]} size={72} />
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", marginTop: 4 }}>{progress}% done</div>
+        </div>
+      </div>
+
+      {/* Status selector */}
+      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Project Status</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {["Planning", "In Progress", "Completed", "Post-Execution"].map(s => (
+            <button key={s} onClick={() => changeStatus(s)} style={{
+              padding: "8px 18px", borderRadius: 20, border: `1.5px solid ${STATUS_COLORS[s]}`,
+              background: status === s ? STATUS_COLORS[s] : STATUS_BG[s],
+              color: status === s ? "#fff" : STATUS_COLORS[s],
+              fontFamily: "monospace", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+            }}>{s}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tasks */}
+      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+          Task Checklist — {completedCount}/{tasks.length} completed
+        </div>
+        {tasks.length === 0 && (
+          <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace", marginBottom: 14 }}>
+            No tasks found in this plan. Try re-tracking the project from the plan view.
+          </div>
+        )}
+        {tasks.map((task, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #F0FAF2" }}>
+            <input type="checkbox" checked={task.done} onChange={() => toggleTask(i)}
+              style={{ width: 18, height: 18, accentColor: "#1A7A3C", cursor: "pointer", flexShrink: 0 }} />
+            <span style={{ flex: 1, fontSize: 14, color: task.done ? "#8AB89A" : "#0D2B1A", textDecoration: task.done ? "line-through" : "none", fontFamily: "Georgia, serif" }}>{task.text}</span>
+            <button onClick={() => removeTask(i)} style={{ background: "none", border: "none", color: "#DC2626", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
+          </div>
+        ))}
+        <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace", marginTop: 10, fontStyle: "italic" }}>
+          Tasks are automatically generated from your operations plan.
+        </div>
+      </div>
+
+      {/* Field Notes */}
+      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Field Notes & Updates</div>
+        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+          <textarea style={{ ...inputStyle, minHeight: 72, resize: "vertical" }} placeholder="Log what's happening on the ground — decisions made, changes, wins, blockers..." value={newNote} onChange={e => setNewNote(e.target.value)} />
+          <button onClick={addNote} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, alignSelf: "flex-end", whiteSpace: "nowrap" }}>+ Log</button>
+        </div>
+        {notes.length === 0 && (
+          <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace" }}>No notes yet. Start logging your project activity.</div>
+        )}
+        {notes.map((note, i) => (
+          <div key={i} style={{ background: "#F0FAF2", border: "1px solid #C8E6D0", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
+            <div style={{ fontSize: 14, color: "#0D2B1A", lineHeight: 1.6, fontFamily: "Georgia, serif", marginBottom: 6 }}>{note.text}</div>
+            <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{note.addedAt}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* View original plan */}
+      <div style={{ textAlign: "center", padding: "16px 0", borderTop: "1px solid #C8E6D0", color: "#8AB89A", fontFamily: "monospace", fontSize: 11, letterSpacing: 1 }}>
+        S-Flow by SPHRAGIS — Project Tracker · Last updated {project.updatedAt}
+      </div>
+    </div>
+  );
+}
+
+// ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
+function DashboardPage({ userId, onBack, onViewPlan }) {
+  const [projects, setProjects] = useState(() => loadProjects(userId));
+  const [activeProject, setActiveProject] = useState(null);
+
+  const updateProject = (updated) => {
+    const newProjects = projects.map(p => p.id === updated.id ? updated : p);
+    setProjects(newProjects);
+    saveProjects(newProjects, userId);
+    setActiveProject(updated);
+  };
+
+  const removeProject = (id) => {
+    const newProjects = projects.filter(p => p.id !== id);
+    setProjects(newProjects);
+    saveProjects(newProjects, userId);
+  };
+
+  if (activeProject) {
+    return (
+      <>
+        <div style={{ borderBottom: "2px solid #1A7A3C", padding: "0 36px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", height: 68, position: "sticky", top: 0, zIndex: 100 }}>
+          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 4, color: "#1A7A3C", fontFamily: "Georgia, serif" }}>SPHRAGIS</div>
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 2, textTransform: "uppercase" }}>Project Tracker</div>
+        </div>
+        <ProjectTracker project={activeProject} onBack={() => setActiveProject(null)} onUpdate={updateProject} />
+      </>
+    );
+  }
+
+  const statusCounts = { "Planning": 0, "In Progress": 0, "Completed": 0, "Post-Execution": 0 };
+  projects.forEach(p => { if (statusCounts[p.status] !== undefined) statusCounts[p.status]++; });
+
+  return (
+    <div style={{ maxWidth: 920, margin: "0 auto", padding: "32px 36px 60px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid #C8E6D0", borderRadius: 8, padding: "8px 16px", fontFamily: "monospace", fontSize: 11, color: "#4A7A5A", cursor: "pointer", letterSpacing: 1 }}>← Back</button>
+        <div>
+          <h2 style={{ fontSize: "clamp(20px,3vw,30px)", fontWeight: 900, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>Project Dashboard</h2>
+          <div style={{ fontSize: 12, color: "#4A7A5A", fontFamily: "monospace" }}>{projects.length} project{projects.length !== 1 ? "s" : ""} being tracked</div>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      {projects.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
+          {Object.entries(statusCounts).map(([status, count]) => (
+            <div key={status} style={{ background: STATUS_BG[status], border: `1px solid ${STATUS_COLORS[status]}33`, borderRadius: 10, padding: "14px 16px", borderLeft: `4px solid ${STATUS_COLORS[status]}` }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: STATUS_COLORS[status], fontFamily: "monospace" }}>{count}</div>
+              <div style={{ fontSize: 11, color: STATUS_COLORS[status], fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>{status}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {projects.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 40px", background: "#fff", border: "1px solid #C8E6D0", borderRadius: 12, color: "#4A7A5A", fontFamily: "monospace", fontSize: 13 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>No projects tracked yet</div>
+          <div style={{ color: "#8AB89A" }}>Generate a plan and click "Track This Project" to start monitoring it here.</div>
+        </div>
+      )}
+
+      {/* Project cards */}
+      {projects.map(project => (
+        <div key={project.id} style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 12, padding: "20px 22px", marginBottom: 14, display: "flex", alignItems: "center", gap: 18 }}>
+          <div style={{ flexShrink: 0 }}>
+            <ProgressRing percent={project.progress || 0} color={STATUS_COLORS[project.status]} size={64} />
+            <div style={{ textAlign: "center", fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", marginTop: 2 }}>{project.progress || 0}%</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#0D2B1A", marginBottom: 4, fontFamily: "Georgia, serif" }}>{project.projectName}</div>
+            <div style={{ fontSize: 12, color: "#4A7A5A", fontFamily: "monospace", marginBottom: 8 }}>{project.industry} · {project.projectType}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: STATUS_COLORS[project.status], background: STATUS_BG[project.status], border: `1px solid ${STATUS_COLORS[project.status]}44`, padding: "3px 10px", borderRadius: 20 }}>{project.status}</span>
+              <span style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{project.tasks?.length || 0} tasks · {project.notes?.length || 0} notes</span>
+              <span style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>Updated {project.updatedAt}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
+            <button onClick={() => setActiveProject(project)} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontFamily: "monospace", fontSize: 11, letterSpacing: 1, cursor: "pointer", fontWeight: 700, textTransform: "uppercase" }}>Track →</button>
+            <button onClick={() => removeProject(project.id)} style={{ background: "none", color: "#DC2626", border: "1px solid #DC262633", padding: "7px 18px", borderRadius: 8, fontFamily: "monospace", fontSize: 11, cursor: "pointer" }}>Remove</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 // ─── HISTORY HELPERS ─────────────────────────────────────────────────────────
 const STORAGE_KEY = "sflow_history_v2";
 function loadHistory(userId) {
@@ -969,11 +917,13 @@ function addProjectToDashboard(entry, userId) {
     const projects = loadProjects(userId);
     const existing = projects.find(p => p.id === entry.id);
     if (existing) return; // already tracked
+    // Auto-extract tasks from the plan's task breakdown section
+    const autoTasks = extractTasksFromPlan(entry.plan?.tasks || "");
     projects.unshift({
       ...entry,
       status: "Planning",
       progress: 0,
-      tasks: [],
+      tasks: autoTasks,
       notes: [],
       addedAt: new Date().toLocaleString(),
       updatedAt: new Date().toLocaleString(),
@@ -1024,6 +974,41 @@ function parsePlan(raw) {
       .replace(markers[key], "").replace(/^[\s\-=:]+/, "").trim();
   }
   return sections;
+}
+
+// ─── EXTRACT TASKS FROM PLAN TEXT ────────────────────────────────────────────
+function extractTasksFromPlan(tasksText) {
+  if (!tasksText) return [];
+  const lines = tasksText.split("
+");
+  const tasks = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    // Match numbered items like "1.", "1)", bullet points, or lines with task-like content
+    const match = trimmed.match(/^(?:\d+[\.\)]\s*|[-•*]\s*|[A-Z]\.\s*)(.+)/);
+    if (match) {
+      const taskText = match[1].trim();
+      // Skip section headers and very short lines
+      if (taskText.length > 10 && !taskText.match(/^(phase|stage|week|month|day|section)/i)) {
+        // Remove role assignments like "(Project Manager)" or "- Role: X"
+        const cleaned = taskText
+          .replace(/\s*[-–]\s*(Role|Responsible|Owner|Lead|Duration|Time)[:\s].+$/i, "")
+          .replace(/\s*\((?:Project Manager|Coordinator|Director|Officer|Lead|Team|Staff|Volunteer)[^)]*\)/gi, "")
+          .trim();
+        if (cleaned.length > 8) {
+          tasks.push({ text: cleaned, done: false });
+        }
+      }
+    }
+  }
+  // If no numbered/bulleted tasks found, try splitting by common task patterns
+  if (tasks.length === 0) {
+    const sentences = tasksText.split(/[.
+]/).filter(s => s.trim().length > 15);
+    return sentences.slice(0, 15).map(s => ({ text: s.trim(), done: false }));
+  }
+  return tasks.slice(0, 25); // cap at 25 tasks
 }
 
 // ─── STYLES ───────────────────────────────────────────────────────────────────
@@ -1789,5 +1774,51 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
       )}
     </div>
   );
+}
+
+
+
+// ─── ROOT WRAPPER ─────────────────────────────────────────────────────────────
+export default function Root() {
+  const [session, setSession] = useState(() => getSession());
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    // Verify stored session is still valid
+    const s = getSession();
+    if (s?.access_token) {
+      fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${s.access_token}` }
+      }).then(r => {
+        if (r.ok) setSession(s);
+        else { setSession(null); setSession(null); localStorage.removeItem("sflow_session"); }
+      }).catch(() => setSession(s)) // if offline, trust stored session
+      .finally(() => setChecking(false));
+    } else {
+      setChecking(false);
+    }
+  }, []);
+
+  const handleAuth = (data) => {
+    setSession(data);
+  };
+
+  const handleLogout = () => {
+    setSession(null);
+    setSession(null);
+    localStorage.removeItem("sflow_session");
+  };
+
+  if (checking) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#F7FDF9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 44, height: 44, border: "4px solid #C8E6D0", borderTop: "4px solid #1A7A3C", borderRadius: "50%", animation: "spin 0.9s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!session) return <AuthScreen onAuth={handleAuth} />;
+  return <SFlow session={session} onLogout={handleLogout} />;
 }
 
