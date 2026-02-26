@@ -1157,22 +1157,18 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
     }
     setError(""); setScreen("loading"); setLoadingStep(0);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [{ role: "user", content: buildPrompt() }],
-        }),
+        body: JSON.stringify({ prompt: buildPrompt() }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `API error ${res.status}`);
+        throw new Error(errData?.error || `API error ${res.status}`);
       }
       const data = await res.json();
-      const text = data.content?.map(b => b.text || "").join("\n") || "";
-      if (!text) throw new Error("Empty response from API. Check your API key.");
+      const text = data.text || "";
+      if (!text) throw new Error("Empty response. Please try again.");
       const parsed = parsePlan(text);
       setRawPlan(text); setPlan(parsed); setScreen("plan");
       saveToHistory({
