@@ -1026,9 +1026,6 @@ function SFlow({ session, onLogout }) {
   const [error, setError] = useState("");
   const [shareMsg, setShareMsg] = useState("");
   const [loadingStep, setLoadingStep] = useState(0);
-  const [livePreview, setLivePreview] = useState(null);
-  const [livePreviewLoading, setLivePreviewLoading] = useState(false);
-  const [livePreviewError, setLivePreviewError] = useState("");
   const [formReadiness, setFormReadiness] = useState(0);
   const autoGenRef = useRef(null);
 
@@ -1075,82 +1072,8 @@ function SFlow({ session, onLogout }) {
     if (formData.location) score += 5;
     if (formData.timeline) score += 5;
     setFormReadiness(score);
-    // Auto-trigger live preview when form has enough data (50+ score)
-    if (score >= 50 && formData.projectName && formData.description && formData.description.length > 30) {
-      if (autoGenRef.current) clearTimeout(autoGenRef.current);
-      autoGenRef.current = setTimeout(() => {
-        generateLivePreview(formData, roles, selectedTasks);
-      }, 2500); // 2.5s debounce after user stops typing
-    }
-    return () => { if (autoGenRef.current) clearTimeout(autoGenRef.current); };
   }, [formData, roles, selectedTasks, screen]);
 
-  const generateLivePreview = async (currentFormData, currentRoles, currentTasks) => {
-    if (livePreviewLoading) return;
-    setLivePreviewLoading(true);
-    setLivePreviewError("");
-    try {
-      const rolesText = currentRoles.length ? currentRoles.map(r => `${r.role} (x${r.count})`).join(", ") : "Not specified";
-      const tasksText = currentTasks.length ? currentTasks.join(", ") : "Not specified";
-      const fieldLines = (ind?.formSections || []).flatMap(sec =>
-        sec.fields.filter(f => !["roles","tasks","budget"].includes(f.type))
-          .map(f => `${f.label}: ${currentFormData[f.name] || "Not provided"}`)
-      ).join("\n");
-      const budget = (currentFormData.budgetMin || currentFormData.budgetMax)
-        ? `${currentFormData.currencySymbol || ""}${currentFormData.budgetMin || ""} – ${currentFormData.currencySymbol || ""}${currentFormData.budgetMax || ""}`
-        : "Not specified";
-      const prompt = `You are S-Flow, an expert operations strategist. A ${ind?.name} organisation is planning a ${selectedProject}.
-
-INDUSTRY: ${ind?.name}
-PROJECT TYPE: ${selectedProject}
-
-USER INPUTS:
-${fieldLines}
-
-TEAM: ${rolesText}
-ACTIVITIES: ${tasksText}
-BUDGET: ${budget}
-
-Write a comprehensive operations plan with EXACTLY these five headers:
-
-PROJECT OBJECTIVES
-4-6 numbered SMART objectives.
-
-TIMELINE & MILESTONES
-Phased timeline with specific milestones.
-
-TASK BREAKDOWN & ROLES
-Tasks with assigned roles (use ONLY the roles listed), descriptions, and durations.
-
-RISK ASSESSMENT
-4-6 risks with likelihood, impact, and mitigation.
-
-COMMUNICATION PLAN
-Specific channels, frequency, and stakeholder approach.`;
-
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      if (!res.ok) { const e = await res.json().catch(()=>{}); throw new Error(e?.error?.message || `API error ${res.status}`); }
-      const data = await res.json();
-      const text = data.content?.map(b => b.text || "").join("\n") || "";
-      if (text) {
-        const parsed = parsePlan(text);
-        setLivePreview({ plan: parsed, rawPlan: text });
-      }
-    } catch (err) {
-      console.error("Live preview error:", err);
-      setLivePreviewError("Could not generate preview. Check API key.");
-    } finally {
-      setLivePreviewLoading(false);
-    }
-  };
 
   const handleChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
   const ind = selectedIndustry;
@@ -1418,13 +1341,12 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
                 <div style={{ width:`${formReadiness}%`, height:"100%", background: formReadiness >= 80 ? C.success : formReadiness >= 50 ? C.green : C.muted, borderRadius:99, transition:"width 0.5s ease" }} />
               </div>
               <span style={{ fontSize:11, fontFamily:"monospace", color: formReadiness >= 50 ? C.green : C.muted, whiteSpace:"nowrap" }}>
-                {formReadiness < 50 ? "Fill in more details to preview plan" : formReadiness < 80 ? "✓ Generating live preview..." : "✓ Plan ready"}
+                {formReadiness < 50 ? "Fill in more details to generate your plan" : formReadiness < 80 ? "✓ Looking good — add more detail for a sharper plan" : "✓ Ready to generate"}
               </span>
             </div>
           </div>
 
-          <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 36px 80px", display:"grid", gridTemplateColumns: livePreview || livePreviewLoading ? "1fr 1fr" : "780px", gap:28, justifyContent:"center" }}>
-          <div>
+          <div style={{ maxWidth:780, margin:"0 auto", padding:"0 36px 80px" }}>
             {(ind.formSections || []).map((section, si) => (
               <div key={section.id} style={S.sectionCard}>
                 <div style={S.sectionHead} onClick={() => toggleSection(si)}>
@@ -1472,73 +1394,9 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
             ))}
 
             {error && <div style={S.errorBox}>{error}</div>}
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:22, flexWrap:"wrap", gap:10 }}>
-              <div style={{ fontSize:13, color:C.muted, fontFamily:"monospace" }}>
-                {livePreview ? "✓ Live preview ready — click to finalise" : "Fill the form and your plan will preview automatically"}
-              </div>
-              <button style={S.btn} onClick={generatePlan}>
-                {livePreview ? "Finalise & Save Plan →" : "Generate Operations Plan →"}
-              </button>
+            <div style={{ display:"flex", justifyContent:"flex-end", marginTop:22 }}>
+              <button style={S.btn} onClick={generatePlan}>Generate Operations Plan →</button>
             </div>
-          </div>
-
-          {/* LIVE PREVIEW PANEL */}
-          {(livePreview || livePreviewLoading) && (
-            <div style={{ position:"sticky", top:80, alignSelf:"start", maxHeight:"calc(100vh - 100px)", overflowY:"auto" }}>
-              <div style={{ background:C.white, border:`2px solid ${C.green}`, borderRadius:12, overflow:"hidden", boxShadow:`0 8px 32px ${C.green}18` }}>
-                {/* Panel header */}
-                <div style={{ background:C.green, padding:"14px 20px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <div>
-                    <div style={{ fontSize:12, fontWeight:700, color:"#fff", fontFamily:"monospace", letterSpacing:2, textTransform:"uppercase" }}>
-                      {livePreviewLoading ? "⟳ Generating Preview..." : "⚡ Live Plan Preview"}
-                    </div>
-                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", fontFamily:"monospace", marginTop:2 }}>
-                      Updates as you fill the form
-                    </div>
-                  </div>
-                  {livePreview && !livePreviewLoading && (
-                    <button onClick={() => { setRawPlan(livePreview.rawPlan); setPlan(livePreview.plan); saveToHistory({ projectName:formData.projectName, industry:ind?.name, industryId:ind?.id, projectType:selectedProject, plan:livePreview.plan, rawPlan:livePreview.rawPlan, formData }); setScreen("plan"); }}
-                      style={{ background:"#fff", color:C.green, border:"none", padding:"8px 16px", fontFamily:"monospace", fontSize:11, letterSpacing:1, textTransform:"uppercase", cursor:"pointer", borderRadius:6, fontWeight:700 }}>
-                      Open Full Plan →
-                    </button>
-                  )}
-                </div>
-                {livePreviewLoading && (
-                  <div style={{ padding:"32px 20px", textAlign:"center" }}>
-                    <div style={{ width:36, height:36, border:`3px solid ${C.border}`, borderTop:`3px solid ${C.green}`, borderRadius:"50%", animation:"spin 0.9s linear infinite", margin:"0 auto 14px" }} />
-                    <div style={{ fontSize:13, color:C.muted, fontFamily:"monospace" }}>Building your plan...</div>
-                  </div>
-                )}
-                {livePreviewError && (
-                  <div style={{ padding:"16px 20px", background:C.dangerLight, color:C.danger, fontSize:12, fontFamily:"monospace" }}>
-                    ⚠ {livePreviewError}
-                    <div style={{ marginTop:8, fontSize:11, color:C.muted }}>Check your internet connection and try again.</div>
-                  </div>
-                )}
-                {livePreview && !livePreviewLoading && (
-                  <div style={{ padding:"16px 20px" }}>
-                    {[
-                      { icon:"🎯", title:"Objectives", content: livePreview.plan.objectives },
-                      { icon:"📅", title:"Timeline", content: livePreview.plan.timeline },
-                      { icon:"✅", title:"Task Breakdown", content: livePreview.plan.tasks },
-                      { icon:"⚠️", title:"Risk Assessment", content: livePreview.plan.risks },
-                      { icon:"📢", title:"Communication Plan", content: livePreview.plan.communication },
-                    ].map(sec => (
-                      <div key={sec.title} style={{ marginBottom:16, background:C.card, border:`1px solid ${C.border}`, borderRadius:8, overflow:"hidden" }}>
-                        <div style={{ background:C.greenLight, borderBottom:`1px solid ${C.border}`, padding:"9px 14px", display:"flex", alignItems:"center", gap:7 }}>
-                          <span style={{ fontSize:14 }}>{sec.icon}</span>
-                          <span style={{ fontSize:11, fontWeight:700, color:C.green, fontFamily:"monospace", letterSpacing:1, textTransform:"uppercase" }}>{sec.title}</span>
-                        </div>
-                        <div style={{ fontSize:13, lineHeight:1.75, color:C.text, whiteSpace:"pre-wrap", padding:"12px 14px", fontFamily:"Georgia, serif", maxHeight:200, overflowY:"auto" }}>
-                          {sec.content || "Generating..."}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
           </div>
         </>
       )}
