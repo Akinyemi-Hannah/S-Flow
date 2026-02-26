@@ -464,24 +464,6 @@ const INDUSTRIES = [
 const SUPABASE_URL = "https://fwkyipqtbncxossqrgeb.supabase.co";
 const SUPABASE_KEY = "sb_publishable_qtV-YXr1d70nH5TUE1K5Ag_HcYke88D";
 
-async function supabase(path, options = {}) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-    headers: {
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${options.token || SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-      "Prefer": options.prefer || "",
-      ...options.headers,
-    },
-    method: options.method || "GET",
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.error_description || `Error ${res.status}`);
-  }
-  return options.method === "DELETE" || res.status === 204 ? null : res.json().catch(() => null);
-}
 
 async function authFetch(path, body, method = "POST") {
   const res = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
@@ -787,7 +769,7 @@ function ProjectTracker({ project, onBack, onUpdate }) {
 }
 
 // ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function DashboardPage({ userId, onBack, onViewPlan }) {
+function DashboardPage({ userId, onBack }) {
   const [projects, setProjects] = useState(() => loadProjects(userId));
   const [activeProject, setActiveProject] = useState(null);
 
@@ -1298,7 +1280,6 @@ function HistoryPage({ onBack, onLoadPlan, userId }) {
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 function SFlow({ session, onLogout }) {
   const [screen, setScreen] = useState("landing");
-  const [dashboardProject, setDashboardProject] = useState(null);
   const [selectedIndustry, setSelectedIndustry] = useState(null);
   const [selectedProject, setSelectedProject] = useState("");
   const [openSections, setOpenSections] = useState({});
@@ -1543,14 +1524,6 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
           <DashboardPage
             userId={session?.user?.id}
             onBack={() => setScreen("landing")}
-            onViewPlan={(project) => {
-              setPlan(project.plan);
-              setRawPlan(project.rawPlan || "");
-              setSelectedIndustry(INDUSTRIES.find(i => i.id === project.industryId) || null);
-              setSelectedProject(project.projectType || "");
-              setFormData(project.formData || {});
-              setScreen("plan");
-            }}
           />
         </>
       )}
