@@ -1,4 +1,4 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import Root from './SFlow.jsx'
+import Root from './sflow.jsx'
 ReactDOM.createRoot(document.getElementById('root')).render(<React.StrictMode><Root /></React.StrictMode>)
