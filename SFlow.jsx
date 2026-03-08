@@ -8,6 +8,17 @@ const C = {
 
 const COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo (Brazzaville)","Congo (Kinshasa)","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Ivory Coast","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
 
+const REGIONS = {
+  "Africa": ["West Africa","East Africa","North Africa","Southern Africa","Central Africa","Pan-Africa","ECOWAS","SADC","AU Region"],
+  "Americas": ["North America","South America","Central America","Caribbean","Latin America"],
+  "Asia": ["South Asia","Southeast Asia","East Asia","Central Asia","Middle East"],
+  "Europe": ["Western Europe","Eastern Europe","Northern Europe","Southern Europe","European Union"],
+  "Oceania": ["Pacific Islands","Australasia"],
+  "Global": ["Global","International","Diaspora"],
+};
+
+const REGIONS_FLAT = Object.values(REGIONS).flat();
+
 const CURRENCIES = [
   {symbol:"₦",name:"Nigerian Naira"},{symbol:"$",name:"US Dollar"},{symbol:"£",name:"British Pound"},
   {symbol:"€",name:"Euro"},{symbol:"KES",name:"Kenyan Shilling"},{symbol:"GHS",name:"Ghanaian Cedi"},
@@ -1058,15 +1069,86 @@ function DynamicField({ field, value, onChange, formData, roles, setRoles, selec
       </select>
     </div>
   );
-  if (field.type === "country") return (
-    <div style={S.formGroup}>
-      <label style={S.label}>{field.label || "Country / Location"}</label>
-      <select style={S.select} name={field.name} value={value || ""} onChange={onChange} onFocus={focus} onBlur={blur}>
-        <option value="">Select country...</option>
-        {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
-    </div>
-  );
+  if (field.type === "country") {
+    const scope = formData.geoScope || "single";
+    const scopeOptions = [
+      { value: "single", label: "Single Country" },
+      { value: "multi", label: "Multi-Country" },
+      { value: "regional", label: "Regional" },
+      { value: "global", label: "Global" },
+    ];
+    return (
+      <div style={S.formGroup}>
+        <label style={S.label}>{field.label || "Geographic Scope"}</label>
+        {/* Scope selector */}
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
+          {scopeOptions.map(opt => (
+            <button key={opt.value} type="button"
+              onClick={() => { onChange({ target: { name: "geoScope", value: opt.value } }); onChange({ target: { name: field.name, value: "" } }); }}
+              style={{ padding:"7px 16px", borderRadius:20, border:`1.5px solid ${scope === opt.value ? C.green : C.border}`,
+                background: scope === opt.value ? C.green : "transparent",
+                color: scope === opt.value ? "#fff" : C.muted,
+                fontFamily:"monospace", fontSize:11, fontWeight:700, cursor:"pointer", transition:"all 0.15s" }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {/* Single country */}
+        {scope === "single" && (
+          <select style={S.select} name={field.name} value={value || ""} onChange={onChange} onFocus={focus} onBlur={blur}>
+            <option value="">Select country...</option>
+            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+        {/* Multi-country */}
+        {scope === "multi" && (
+          <div>
+            <select style={S.select} onChange={e => {
+              if (!e.target.value) return;
+              const current = value ? value.split(", ") : [];
+              if (!current.includes(e.target.value)) {
+                onChange({ target: { name: field.name, value: [...current, e.target.value].join(", ") } });
+              }
+              e.target.value = "";
+            }} onFocus={focus} onBlur={blur}>
+              <option value="">Add a country...</option>
+              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            {value && (
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8 }}>
+                {value.split(", ").map(c => (
+                  <span key={c} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:"4px 12px", fontSize:12, fontFamily:"monospace", color:C.text, display:"flex", alignItems:"center", gap:6 }}>
+                    {c}
+                    <button type="button" onClick={() => {
+                      const updated = value.split(", ").filter(x => x !== c).join(", ");
+                      onChange({ target: { name: field.name, value: updated } });
+                    }} style={{ background:"none", border:"none", color:C.danger, cursor:"pointer", fontSize:14, padding:0, lineHeight:1 }}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {/* Regional */}
+        {scope === "regional" && (
+          <select style={S.select} name={field.name} value={value || ""} onChange={onChange} onFocus={focus} onBlur={blur}>
+            <option value="">Select region...</option>
+            {Object.entries(REGIONS).map(([continent, regions]) => (
+              <optgroup key={continent} label={continent}>
+                {regions.map(r => <option key={r} value={r}>{r}</option>)}
+              </optgroup>
+            ))}
+          </select>
+        )}
+        {/* Global */}
+        {scope === "global" && (
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:"12px 16px", fontSize:13, color:C.muted, fontFamily:"monospace" }}>
+            🌍 Global scope selected — your plan will address international operations context.
+          </div>
+        )}
+      </div>
+    );
+  }
   if (field.type === "budget") return (
     <div style={S.formGroup}>
       <label style={S.label}>Estimated Budget</label>
@@ -1363,10 +1445,14 @@ function SFlow({ session, onLogout }) {
     : "Not specified";
 
   const buildPrompt = () => {
+    const geoLabel = formData.geoScope === "global" ? "Global"
+      : formData.geoScope === "regional" ? `Regional — ${formData.location || "Not specified"}`
+      : formData.geoScope === "multi" ? `Multi-Country — ${formData.location || "Not specified"}`
+      : (formData.location || "Not specified");
     const fieldLines = (ind?.formSections || []).flatMap(sec =>
       sec.fields
         .filter(f => !["roles", "tasks", "budget"].includes(f.type))
-        .map(f => `${f.label}: ${formData[f.name] || "Not provided"}`)
+        .map(f => f.type === "country" ? `Geographic Scope: ${geoLabel}` : `${f.label}: ${formData[f.name] || "Not provided"}`)
     ).join("\n");
     const rolesText = roles.length ? roles.map(r => `${r.role} (x${r.count})`).join(", ") : "Not specified";
     const tasksText = selectedTasks.length ? selectedTasks.join(", ") : "Not specified";
