@@ -1779,6 +1779,7 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
             <button style={S.btn} onClick={() => window.print()}>⬇ Save as PDF</button>
             <button style={S.btnOutline} onClick={downloadTxt}>⬇ Download Text</button>
             <button style={S.btnGhost} onClick={sharePlan}>🔗 Share Plan</button>
+            <button style={S.btnGhost} onClick={() => setScreen("form")}>✏️ Edit & Regenerate</button>
             <button style={S.btnGhost} onClick={() => setScreen("industry")}>+ New Plan</button>
             <button style={{ ...S.btnGhost, borderColor:"#1A7A3C", color:"#1A7A3C", fontWeight:700 }} onClick={() => {
               const entry = {
