@@ -1028,7 +1028,7 @@ const S = {
 };
 
 // ─── FIELD RENDERER ───────────────────────────────────────────────────────────
-function DynamicField({ field, value, onChange, formData, roles, setRoles, selectedTasks, setSelectedTasks, industry, projectType }) {
+function DynamicField({ field, value, onChange, onChangeMulti, formData, roles, setRoles, selectedTasks, setSelectedTasks, industry, projectType }) {
   const [pendingRole, setPendingRole] = useState("");
   const [pendingCount, setPendingCount] = useState(1);
   const [pendingCustom, setPendingCustom] = useState("");
@@ -1084,7 +1084,7 @@ function DynamicField({ field, value, onChange, formData, roles, setRoles, selec
         <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
           {scopeOptions.map(opt => (
             <button key={opt.value} type="button"
-              onClick={() => { onChange({ target: { name: "geoScope", value: opt.value } }); onChange({ target: { name: field.name, value: "" } }); }}
+              onClick={() => { onChangeMulti ? onChangeMulti({ geoScope: opt.value, [field.name]: "" }) : (onChange({ target: { name: "geoScope", value: opt.value } }), onChange({ target: { name: field.name, value: "" } })); }}
               style={{ padding:"7px 16px", borderRadius:20, border:`1.5px solid ${scope === opt.value ? C.green : C.border}`,
                 background: scope === opt.value ? C.green : "transparent",
                 color: scope === opt.value ? "#fff" : C.muted,
@@ -1728,13 +1728,13 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
                       if (pairWithNext) {
                         return (
                           <div key={field.name} style={S.grid2} className="grid2">
-                            <DynamicField field={field} value={formData[field.name]} onChange={handleChange} formData={formData} roles={roles} setRoles={setRoles} selectedTasks={selectedTasks} setSelectedTasks={setSelectedTasks} industry={ind} projectType={selectedProject} />
-                            <DynamicField field={next} value={formData[next.name]} onChange={handleChange} formData={formData} roles={roles} setRoles={setRoles} selectedTasks={selectedTasks} setSelectedTasks={setSelectedTasks} industry={ind} projectType={selectedProject} />
+                            <DynamicField field={field} value={formData[field.name]} onChange={handleChange} onChangeMulti={updates => setFormData(prev => ({...prev, ...updates}))} formData={formData} roles={roles} setRoles={setRoles} selectedTasks={selectedTasks} setSelectedTasks={setSelectedTasks} industry={ind} projectType={selectedProject} />
+                            <DynamicField field={next} value={formData[next.name]} onChange={handleChange} onChangeMulti={updates => setFormData(prev => ({...prev, ...updates}))} formData={formData} roles={roles} setRoles={setRoles} selectedTasks={selectedTasks} setSelectedTasks={setSelectedTasks} industry={ind} projectType={selectedProject} />
                           </div>
                         );
                       }
                       return (
-                        <DynamicField key={field.name} field={field} value={formData[field.name]} onChange={handleChange} formData={formData} roles={roles} setRoles={setRoles} selectedTasks={selectedTasks} setSelectedTasks={setSelectedTasks} industry={ind} projectType={selectedProject} />
+                        <DynamicField key={field.name} field={field} value={formData[field.name]} onChange={handleChange} onChangeMulti={updates => setFormData(prev => ({...prev, ...updates}))} formData={formData} roles={roles} setRoles={setRoles} selectedTasks={selectedTasks} setSelectedTasks={setSelectedTasks} industry={ind} projectType={selectedProject} />
                       );
                     })}
                   </div>
