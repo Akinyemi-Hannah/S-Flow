@@ -1549,31 +1549,28 @@ Return ONLY a valid JSON object. No explanation, no markdown, no code blocks. St
         const data = await res.json();
         const text = data.text || "";
         try {
-          // Try to extract JSON from anywhere in the response
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (!jsonMatch) throw new Error("No JSON found");
-          const clean = jsonMatch[0]
-            .replace(/```json|```/g, "")
-            .replace(/[ --]/g, " ")
-            .trim();
-          const extracted = JSON.parse(clean);
+          // Find the first { and last } to extract JSON
+          const firstBrace = text.indexOf("{");
+          const lastBrace = text.lastIndexOf("}");
+          if (firstBrace === -1 || lastBrace === -1) throw new Error("No JSON found");
+          const jsonStr = text.slice(firstBrace, lastBrace + 1);
+          const extracted = JSON.parse(jsonStr);
           const filled = {};
           Object.entries(extracted).forEach(([k, v]) => {
-            if (v && typeof v === "string" && v.trim() !== "" && v !== "empty string" && v !== "not mentioned" && v !== "N/A" && v !== "n/a") {
-              filled[k] = v.trim();
+            if (v && typeof v === "string") {
+              const val = v.trim();
+              const skip = ["", "empty string", "not mentioned", "not found", "n/a", "na", "none", "unknown"];
+              if (val.length > 0 && !skip.includes(val.toLowerCase())) {
+                filled[k] = val;
+              }
             }
           });
-          if (Object.keys(filled).length === 0) throw new Error("No fields extracted");
+          if (Object.keys(filled).length === 0) throw new Error("Nothing useful extracted");
           setFormData(prev => ({ ...prev, ...filled }));
-          setDocMsg("✓ Form pre-filled from your document! Review and adjust before generating.");
+          const count = Object.keys(filled).length;
+          setDocMsg(`✓ ${count} field${count > 1 ? "s" : ""} pre-filled from your document! Review and adjust before generating.`);
         } catch(parseErr) {
-          // Even if JSON parse fails, try to use text directly for description
-          if (text.length > 50) {
-            setFormData(prev => ({ ...prev, description: prev.description || text.slice(0, 500) }));
-            setDocMsg("✓ Document read! Some fields pre-filled. Please review and complete the form.");
-          } else {
-            setDocMsg("Could not extract data. Please fill the form manually.");
-          }
+          setDocMsg("Document uploaded but could not auto-fill. Please fill the form manually.");
         }
         setDocUploading(false);
       };
