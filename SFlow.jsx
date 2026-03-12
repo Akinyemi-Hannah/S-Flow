@@ -1364,6 +1364,8 @@ function SFlow({ session, onLogout }) {
   const [shareMsg, setShareMsg] = useState("");
   const [loadingStep, setLoadingStep] = useState(0);
   const [formReadiness, setFormReadiness] = useState(0);
+  const [docUploading, setDocUploading] = useState(false);
+  const [docMsg, setDocMsg] = useState("");
   const autoGenRef = useRef(null);
 
 
@@ -1490,6 +1492,83 @@ COMMUNICATION PLAN
 Specific internal team cadence, stakeholder update schedule, public-facing channels. Reference the channels and tools the user mentioned. Be specific to ${ind?.name} industry norms.
 
 Write as their dedicated ${ind?.name} operations consultant. Be precise, practical, and industry-specific.`;
+  };
+
+  const handleDocUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowed = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];
+    if (!allowed.includes(file.type)) {
+      setDocMsg("Please upload a PDF, Word document, or text file.");
+      return;
+    }
+    setDocUploading(true);
+    setDocMsg("Reading your document...");
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result.split(",")[1];
+        const isPdf = file.type === "application/pdf";
+        const isText = file.type === "text/plain";
+        let docContent = "";
+        if (isText) {
+          docContent = atob(base64);
+        } else {
+          docContent = `[Document: ${file.name}. Extract all project information from this document.]`;
+        }
+        const prompt = `You are an operations planning assistant. A user has uploaded a project document. Extract and structure the key information to fill in a project planning form.
+
+Document content:
+${isText ? docContent : `File name: ${file.name} (${file.type})`}
+${isPdf || !isText ? `Base64 content available: yes` : ""}
+
+Extract and return ONLY a JSON object with these fields (use empty string if not found):
+{
+  "projectName": "name of the project",
+  "description": "what the project is about",
+  "location": "where it will happen",
+  "timeline": "timeframe or duration",
+  "targetAudience": "who the project serves",
+  "objectives": "main goals",
+  "expectedOutcome": "expected results",
+  "challengesContext": "any challenges or context mentioned",
+  "riskContext": "any risks mentioned",
+  "theme": "theme if mentioned",
+  "eventDate": "date if mentioned",
+  "expectedAttendees": "number of attendees if mentioned"
+}
+
+Return ONLY the JSON object, no explanation, no markdown.`;
+
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+        if (!res.ok) throw new Error("Could not read document");
+        const data = await res.json();
+        const text = data.text || "";
+        try {
+          const clean = text.replace(/```json|```/g, "").trim();
+          const extracted = JSON.parse(clean);
+          setFormData(prev => {
+            const updated = { ...prev };
+            Object.entries(extracted).forEach(([k, v]) => {
+              if (v && v !== "" && v !== "empty string") updated[k] = v;
+            });
+            return updated;
+          });
+          setDocMsg("✓ Document read! Form has been pre-filled. Review and adjust as needed.");
+        } catch {
+          setDocMsg("✓ Document read but could not auto-fill. Please fill the form manually.");
+        }
+        setDocUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setDocMsg("Could not read document. Please try again or fill manually.");
+      setDocUploading(false);
+    }
   };
 
   const generatePlan = async () => {
@@ -1685,13 +1764,25 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
               This form is built for <strong style={{ color:C.text }}>{ind.name}</strong>. Fill in as much detail as you can — the more context, the sharper your plan.
             </p>
             {/* Readiness bar */}
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
               <div style={{ flex:1, height:5, background:C.border, borderRadius:99, overflow:"hidden" }}>
                 <div style={{ width:`${formReadiness}%`, height:"100%", background: formReadiness >= 80 ? C.success : formReadiness >= 50 ? C.green : C.muted, borderRadius:99, transition:"width 0.5s ease" }} />
               </div>
               <span style={{ fontSize:11, fontFamily:"monospace", color: formReadiness >= 50 ? C.green : C.muted, whiteSpace:"nowrap" }}>
                 {formReadiness < 50 ? "Fill in more details to generate your plan" : formReadiness < 80 ? "✓ Looking good — add more detail for a sharper plan" : "✓ Ready to generate"}
               </span>
+            </div>
+            {/* Document Upload */}
+            <div style={{ background:"#F0FAF2", border:"2px dashed #C8E6D0", borderRadius:10, padding:"16px 20px", marginBottom:8, display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
+              <div style={{ flex:1, minWidth:200 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:C.green, fontFamily:"monospace", marginBottom:3 }}>📄 Have a project brief or concept note?</div>
+                <div style={{ fontSize:12, color:C.muted, fontFamily:"monospace" }}>Upload it and S-Flow will pre-fill the form for you automatically.</div>
+                {docMsg && <div style={{ fontSize:12, color: docMsg.startsWith("✓") ? C.success : C.danger, marginTop:6, fontFamily:"monospace" }}>{docMsg}</div>}
+              </div>
+              <label style={{ background: docUploading ? C.muted : C.green, color:"#fff", border:"none", padding:"10px 20px", borderRadius:8, fontFamily:"monospace", fontSize:12, fontWeight:700, cursor: docUploading ? "not-allowed" : "pointer", whiteSpace:"nowrap", letterSpacing:1 }}>
+                {docUploading ? "Reading..." : "📤 Upload Document"}
+                <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleDocUpload} disabled={docUploading} style={{ display:"none" }} />
+              </label>
             </div>
           </div>
 
