@@ -1570,7 +1570,9 @@ Return ONLY a valid JSON object. No explanation, no markdown, no code blocks. St
           const count = Object.keys(filled).length;
           setDocMsg(`✓ ${count} field${count > 1 ? "s" : ""} pre-filled from your document! Review and adjust before generating.`);
         } catch(parseErr) {
-          setDocMsg("Document uploaded but could not auto-fill. Please fill the form manually.");
+          console.log("Doc parse error:", parseErr.message);
+          console.log("Raw AI response:", text.slice(0, 500));
+          setDocMsg("Document uploaded but could not auto-fill. Please fill the form manually. (Debug: " + parseErr.message + ")");
         }
         setDocUploading(false);
       };
