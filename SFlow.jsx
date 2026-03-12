@@ -1507,38 +1507,83 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
     try {
       const reader = new FileReader();
       reader.onload = async (ev) => {
-        const base64 = ev.target.result.split(",")[1];
-        const isPdf = file.type === "application/pdf";
-        const isText = file.type === "text/plain";
-        let docContent = "";
-        if (isText) {
-          docContent = atob(base64);
-        } else {
-          docContent = `[Document: ${file.name}. Extract all project information from this document.]`;
-        }
-        const prompt = `You are an operations planning assistant. A user has uploaded a project document. Extract and structure the key information to fill in a project planning form.
+        try {
+          const isText = file.type === "text/plain";
+          const isDocx = file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+          const isPdf = file.type === "application/pdf";
+          let docContent = "";
 
-Document content:
-${isText ? docContent : `File name: ${file.name} (${file.type})`}
-${isPdf || !isText ? `Base64 content available: yes` : ""}
+          if (isText) {
+            // Plain text - read directly
+            docContent = ev.target.result;
+          } else if (isPdf) {
+            // Use PDF.js to extract text
+            const pdfjsLib = window["pdfjs-dist/build/pdf"];
+            if (!pdfjsLib) {
+              // Load PDF.js dynamically
+              await new Promise((resolve, reject) => {
+                const script = document.createElement("script");
+                script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+              });
+              window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+            }
+            const arrayBuffer = ev.target.result;
+            const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const pages = [];
+            for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              pages.push(content.items.map(item => item.str).join(" "));
+            }
+            docContent = pages.join("\n");
+          } else if (isDocx) {
+            // Use mammoth for Word docs
+            await new Promise((resolve, reject) => {
+              const script = document.createElement("script");
+              script.src = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+            const arrayBuffer = ev.target.result;
+            const result = await window.mammoth.extractRawText({ arrayBuffer });
+            docContent = result.value;
+          }
 
-Extract and return ONLY a JSON object with these fields (use empty string if not found):
+          if (!docContent || docContent.trim().length < 20) {
+            setDocMsg("Could not read document content. Try a .txt file or paste your brief directly.");
+            setDocUploading(false);
+            return;
+          }
+
+          // Trim to avoid token limits
+          const trimmed = docContent.slice(0, 3000);
+
+        const prompt = `You are an operations planning assistant. Extract project information from this document and return a JSON object.
+
+DOCUMENT TEXT:
+${trimmed}
+
+Return ONLY a valid JSON object with these exact keys. Use empty string "" for anything not found:
 {
-  "projectName": "name of the project",
-  "description": "what the project is about",
+  "projectName": "name of the project or initiative",
+  "description": "what the project is about and its purpose",
   "location": "where it will happen",
   "timeline": "timeframe or duration",
-  "targetAudience": "who the project serves",
-  "objectives": "main goals",
-  "expectedOutcome": "expected results",
-  "challengesContext": "any challenges or context mentioned",
+  "targetAudience": "who the project serves or targets",
+  "objectives": "main goals and objectives",
+  "expectedOutcome": "expected results or impact",
+  "challengesContext": "any challenges or context",
   "riskContext": "any risks mentioned",
   "theme": "theme if mentioned",
-  "eventDate": "date if mentioned",
-  "expectedAttendees": "number of attendees if mentioned"
+  "eventDate": "specific date if mentioned",
+  "expectedAttendees": "number of participants if mentioned"
 }
 
-Return ONLY a valid JSON object. No explanation, no markdown, no code blocks. Start your response with { and end with }.`;
+IMPORTANT: Return ONLY the JSON object. Start with { and end with }. No other text.`;
 
         const res = await fetch("/api/generate", {
           method: "POST",
@@ -1570,13 +1615,16 @@ Return ONLY a valid JSON object. No explanation, no markdown, no code blocks. St
           const count = Object.keys(filled).length;
           setDocMsg(`✓ ${count} field${count > 1 ? "s" : ""} pre-filled from your document! Review and adjust before generating.`);
         } catch(parseErr) {
-          console.log("Doc parse error:", parseErr.message);
-          console.log("Raw AI response:", text.slice(0, 500));
-          setDocMsg("Document uploaded but could not auto-fill. Please fill the form manually. (Debug: " + parseErr.message + ")");
+          setDocMsg("Could not extract data from document. Please fill the form manually.");
+          setDocUploading(false);
         }
         setDocUploading(false);
       };
-      reader.readAsDataURL(file);
+      if (file.type === "text/plain") {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
     } catch (err) {
       setDocMsg("Could not read document. Please try again or fill manually.");
       setDocUploading(false);
