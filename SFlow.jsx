@@ -1574,12 +1574,36 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
       const lastBrace = text.lastIndexOf("}");
       if (firstBrace === -1 || lastBrace === -1) throw new Error("No JSON in response");
       const extracted = JSON.parse(text.slice(firstBrace, lastBrace + 1));
+      // Map AI keys to actual form field names
+      const keyMap = {
+        "projectName": "projectName",
+        "description": "description",
+        "location": "location",
+        "timeline": "timeline",
+        "targetAudience": "audience",
+        "audience": "audience",
+        "objectives": "description",
+        "expectedOutcome": "expectedOutcome",
+        "challengesContext": "knownRisks",
+        "riskContext": "riskContext",
+        "theme": "theme",
+        "eventDate": "eventDate",
+        "expectedAttendees": "expectedAttendees",
+        "expectedBeneficiaries": "expectedBeneficiaries",
+        "expectedLearners": "expectedLearners",
+        "expectedPatients": "expectedPatients",
+      };
+      const skip = ["", "empty string", "not mentioned", "not found", "n/a", "na", "none", "unknown"];
       const filled = {};
       Object.entries(extracted).forEach(([k, v]) => {
         if (v && typeof v === "string") {
           const val = v.trim();
-          const skip = ["", "empty string", "not mentioned", "not found", "n/a", "na", "none", "unknown"];
-          if (val.length > 0 && !skip.includes(val.toLowerCase())) filled[k] = val;
+          if (val.length > 0 && !skip.includes(val.toLowerCase())) {
+            const mappedKey = keyMap[k] || k;
+            // Don't overwrite description with objectives if description already set
+            if (mappedKey === "description" && filled["description"]) return;
+            filled[mappedKey] = val;
+          }
         }
       });
       if (Object.keys(filled).length === 0) throw new Error("Nothing extracted");
