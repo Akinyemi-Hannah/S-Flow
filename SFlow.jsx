@@ -1504,132 +1504,93 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
     }
     setDocUploading(true);
     setDocMsg("Reading your document...");
-    try {
+
+    const readFile = () => new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = async (ev) => {
-        try {
-          const isText = file.type === "text/plain";
-          const isDocx = file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-          const isPdf = file.type === "application/pdf";
-          let docContent = "";
-
-          if (isText) {
-            // Plain text - read directly
-            docContent = ev.target.result;
-          } else if (isPdf) {
-            // Use PDF.js to extract text
-            const pdfjsLib = window["pdfjs-dist/build/pdf"];
-            if (!pdfjsLib) {
-              // Load PDF.js dynamically
-              await new Promise((resolve, reject) => {
-                const script = document.createElement("script");
-                script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-              });
-              window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-            }
-            const arrayBuffer = ev.target.result;
-            const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            const pages = [];
-            for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
-              const page = await pdf.getPage(i);
-              const content = await page.getTextContent();
-              pages.push(content.items.map(item => item.str).join(" "));
-            }
-            docContent = pages.join("\n");
-          } else if (isDocx) {
-            // Use mammoth for Word docs
-            await new Promise((resolve, reject) => {
-              const script = document.createElement("script");
-              script.src = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
-              script.onload = resolve;
-              script.onerror = reject;
-              document.head.appendChild(script);
-            });
-            const arrayBuffer = ev.target.result;
-            const result = await window.mammoth.extractRawText({ arrayBuffer });
-            docContent = result.value;
-          }
-
-          if (!docContent || docContent.trim().length < 20) {
-            setDocMsg("Could not read document content. Try a .txt file or paste your brief directly.");
-            setDocUploading(false);
-            return;
-          }
-
-          // Trim to avoid token limits
-          const trimmed = docContent.slice(0, 3000);
-
-        const prompt = `You are an operations planning assistant. Extract project information from this document and return a JSON object.
-
-DOCUMENT TEXT:
-${trimmed}
-
-Return ONLY a valid JSON object with these exact keys. Use empty string "" for anything not found:
-{
-  "projectName": "name of the project or initiative",
-  "description": "what the project is about and its purpose",
-  "location": "where it will happen",
-  "timeline": "timeframe or duration",
-  "targetAudience": "who the project serves or targets",
-  "objectives": "main goals and objectives",
-  "expectedOutcome": "expected results or impact",
-  "challengesContext": "any challenges or context",
-  "riskContext": "any risks mentioned",
-  "theme": "theme if mentioned",
-  "eventDate": "specific date if mentioned",
-  "expectedAttendees": "number of participants if mentioned"
-}
-
-IMPORTANT: Return ONLY the JSON object. Start with { and end with }. No other text.`;
-
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
-        });
-        if (!res.ok) throw new Error("Could not read document");
-        const data = await res.json();
-        const text = data.text || "";
-        try {
-          // Find the first { and last } to extract JSON
-          const firstBrace = text.indexOf("{");
-          const lastBrace = text.lastIndexOf("}");
-          if (firstBrace === -1 || lastBrace === -1) throw new Error("No JSON found");
-          const jsonStr = text.slice(firstBrace, lastBrace + 1);
-          const extracted = JSON.parse(jsonStr);
-          const filled = {};
-          Object.entries(extracted).forEach(([k, v]) => {
-            if (v && typeof v === "string") {
-              const val = v.trim();
-              const skip = ["", "empty string", "not mentioned", "not found", "n/a", "na", "none", "unknown"];
-              if (val.length > 0 && !skip.includes(val.toLowerCase())) {
-                filled[k] = val;
-              }
-            }
-          });
-          if (Object.keys(filled).length === 0) throw new Error("Nothing useful extracted");
-          setFormData(prev => ({ ...prev, ...filled }));
-          const count = Object.keys(filled).length;
-          setDocMsg(`✓ ${count} field${count > 1 ? "s" : ""} pre-filled from your document! Review and adjust before generating.`);
-        } catch(parseErr) {
-          setDocMsg("Could not extract data from document. Please fill the form manually.");
-          setDocUploading(false);
-        }
-        setDocUploading(false);
-      };
+      reader.onload = (ev) => resolve(ev.target.result);
+      reader.onerror = reject;
       if (file.type === "text/plain") {
         reader.readAsText(file);
       } else {
         reader.readAsArrayBuffer(file);
       }
-    } catch (err) {
-      setDocMsg("Could not read document. Please try again or fill manually.");
+    });
+
+    const loadScript = (src) => new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+
+    let docContent = "";
+    try {
+      const result = await readFile();
+      if (file.type === "text/plain") {
+        docContent = result;
+      } else if (file.type === "application/pdf") {
+        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        const pdf = await window.pdfjsLib.getDocument({ data: result }).promise;
+        const pages = [];
+        for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          pages.push(content.items.map(item => item.str).join(" "));
+        }
+        docContent = pages.join("\n");
+      } else {
+        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js");
+        const extracted = await window.mammoth.extractRawText({ arrayBuffer: result });
+        docContent = extracted.value;
+      }
+    } catch (readErr) {
+      setDocMsg("Could not read document. Please try a .txt file instead.");
       setDocUploading(false);
+      return;
     }
+
+    if (!docContent || docContent.trim().length < 20) {
+      setDocMsg("Could not extract text from document. Please try a .txt file.");
+      setDocUploading(false);
+      return;
+    }
+
+    const trimmed = docContent.slice(0, 3000);
+    const prompt = "You are an operations planning assistant. Extract project information from this document and return a JSON object.\n\nDOCUMENT TEXT:\n" + trimmed + "\n\nReturn ONLY a valid JSON object with these exact keys. Use empty string for anything not found:\n{\n  \"projectName\": \"name of the project\",\n  \"description\": \"what the project is about\",\n  \"location\": \"where it will happen\",\n  \"timeline\": \"timeframe or duration\",\n  \"targetAudience\": \"who the project serves\",\n  \"objectives\": \"main goals\",\n  \"expectedOutcome\": \"expected results\",\n  \"challengesContext\": \"any challenges\",\n  \"riskContext\": \"any risks\",\n  \"theme\": \"theme if mentioned\",\n  \"eventDate\": \"specific date if mentioned\",\n  \"expectedAttendees\": \"number of participants if mentioned\"\n}\n\nStart with { and end with }. No other text.";
+
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!res.ok) throw new Error("API error");
+      const data = await res.json();
+      const text = data.text || "";
+      const firstBrace = text.indexOf("{");
+      const lastBrace = text.lastIndexOf("}");
+      if (firstBrace === -1 || lastBrace === -1) throw new Error("No JSON in response");
+      const extracted = JSON.parse(text.slice(firstBrace, lastBrace + 1));
+      const filled = {};
+      Object.entries(extracted).forEach(([k, v]) => {
+        if (v && typeof v === "string") {
+          const val = v.trim();
+          const skip = ["", "empty string", "not mentioned", "not found", "n/a", "na", "none", "unknown"];
+          if (val.length > 0 && !skip.includes(val.toLowerCase())) filled[k] = val;
+        }
+      });
+      if (Object.keys(filled).length === 0) throw new Error("Nothing extracted");
+      setFormData(prev => ({ ...prev, ...filled }));
+      setDocMsg("✓ " + Object.keys(filled).length + " fields pre-filled from your document! Review and adjust before generating.");
+    } catch (apiErr) {
+      setDocMsg("Document read but could not extract fields. Please fill the form manually.");
+    }
+    setDocUploading(false);
   };
+
 
   const generatePlan = async () => {
     if (!formData.projectName || !formData.description) {
