@@ -653,16 +653,36 @@ function ProjectTracker({ project, onBack, onUpdate }) {
   const [notes, setNotes] = useState(project.notes || []);
   const [newNote, setNewNote] = useState("");
   const [status, setStatus] = useState(project.status || "Planning");
+  const [activeTab, setActiveTab] = useState("tasks");
+
+  // Finance state
+  const [income, setIncome] = useState(project.income || []);
+  const [expenses, setExpenses] = useState(project.expenses || []);
+  const [newIncome, setNewIncome] = useState({ description: "", amount: "", date: "", source: "" });
+  const [newExpense, setNewExpense] = useState({ description: "", amount: "", category: "", date: "" });
+
+  const totalBudget = project.formData?.budgetMax ? parseFloat(project.formData.budgetMax) : (project.formData?.budgetMin ? parseFloat(project.formData.budgetMin) : 0);
+  const currencySymbol = project.formData?.currencySymbol || "₦";
+  const totalIncome = income.reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+  const balance = totalIncome - totalExpenses;
+  const budgetUsed = totalBudget > 0 ? Math.round((totalExpenses / totalBudget) * 100) : 0;
+  const budgetHealth = budgetUsed > 90 ? "red" : budgetUsed > 70 ? "orange" : "#1A7A3C";
+  const budgetHealthLabel = budgetUsed > 90 ? "Critical" : budgetUsed > 70 ? "Caution" : "Healthy";
 
   const completedCount = tasks.filter(t => t.done).length;
   const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
-  const save = (updatedTasks, updatedNotes, updatedStatus) => {
+  const fmt = (n) => currencySymbol + Number(n).toLocaleString();
+
+  const save = (updatedTasks, updatedNotes, updatedStatus, updatedIncome, updatedExpenses) => {
     const updated = {
       ...project,
       tasks: updatedTasks,
       notes: updatedNotes,
       status: updatedStatus,
+      income: updatedIncome,
+      expenses: updatedExpenses,
       progress: updatedTasks.length > 0 ? Math.round((updatedTasks.filter(t => t.done).length / updatedTasks.length) * 100) : 0,
       updatedAt: new Date().toLocaleString(),
     };
@@ -672,13 +692,13 @@ function ProjectTracker({ project, onBack, onUpdate }) {
   const toggleTask = (idx) => {
     const updated = tasks.map((t, i) => i === idx ? { ...t, done: !t.done } : t);
     setTasks(updated);
-    save(updated, notes, status);
+    save(updated, notes, status, income, expenses);
   };
 
   const removeTask = (idx) => {
     const updated = tasks.filter((_, i) => i !== idx);
     setTasks(updated);
-    save(updated, notes, status);
+    save(updated, notes, status, income, expenses);
   };
 
   const addNote = () => {
@@ -686,12 +706,40 @@ function ProjectTracker({ project, onBack, onUpdate }) {
     const updated = [{ text: newNote.trim(), addedAt: new Date().toLocaleString() }, ...notes];
     setNotes(updated);
     setNewNote("");
-    save(tasks, updated, status);
+    save(tasks, updated, status, income, expenses);
   };
 
   const changeStatus = (s) => {
     setStatus(s);
-    save(tasks, notes, s);
+    save(tasks, notes, s, income, expenses);
+  };
+
+  const addIncome = () => {
+    if (!newIncome.description || !newIncome.amount) return;
+    const updated = [...income, { ...newIncome, id: Date.now(), addedAt: new Date().toLocaleString() }];
+    setIncome(updated);
+    setNewIncome({ description: "", amount: "", date: "", source: "" });
+    save(tasks, notes, status, updated, expenses);
+  };
+
+  const addExpense = () => {
+    if (!newExpense.description || !newExpense.amount) return;
+    const updated = [...expenses, { ...newExpense, id: Date.now(), addedAt: new Date().toLocaleString() }];
+    setExpenses(updated);
+    setNewExpense({ description: "", amount: "", category: "", date: "" });
+    save(tasks, notes, status, income, updated);
+  };
+
+  const removeIncome = (id) => {
+    const updated = income.filter(i => i.id !== id);
+    setIncome(updated);
+    save(tasks, notes, status, updated, expenses);
+  };
+
+  const removeExpense = (id) => {
+    const updated = expenses.filter(e => e.id !== id);
+    setExpenses(updated);
+    save(tasks, notes, status, income, updated);
   };
 
   const inputStyle = {
@@ -700,14 +748,20 @@ function ProjectTracker({ project, onBack, onUpdate }) {
     outline: "none", boxSizing: "border-box",
   };
 
+  const smallInput = {
+    background: "#F7FDF9", border: "1.5px solid #C8E6D0", borderRadius: 8,
+    color: "#0D2B1A", padding: "8px 12px", fontSize: 13, fontFamily: "Georgia, serif",
+    outline: "none", width: "100%", boxSizing: "border-box",
+  };
+
   return (
-    <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 36px 60px" }}>
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "32px 36px 60px" }}>
       {/* Back + header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
         <button onClick={onBack} style={{ background: "none", border: "1px solid #C8E6D0", borderRadius: 8, padding: "8px 16px", fontFamily: "monospace", fontSize: 11, color: "#4A7A5A", cursor: "pointer", letterSpacing: 1 }}>← Back</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>{project.industry} · {project.projectType}</div>
-          <h2 style={{ fontSize: "clamp(18px,3vw,28px)", fontWeight: 900, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>{project.projectName}</h2>
+          <h2 style={{ fontSize: "clamp(18px,3vw,26px)", fontWeight: 900, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>{project.projectName}</h2>
         </div>
         <div style={{ textAlign: "center" }}>
           <ProgressRing percent={progress} color={STATUS_COLORS[status]} size={72} />
@@ -716,62 +770,156 @@ function ProjectTracker({ project, onBack, onUpdate }) {
       </div>
 
       {/* Status selector */}
-      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Project Status</div>
+      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "16px 20px", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Project Status</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {["Planning", "In Progress", "Completed", "Post-Execution"].map(s => (
             <button key={s} onClick={() => changeStatus(s)} style={{
-              padding: "8px 18px", borderRadius: 20, border: `1.5px solid ${STATUS_COLORS[s]}`,
+              padding: "7px 16px", borderRadius: 20, border: `1.5px solid ${STATUS_COLORS[s]}`,
               background: status === s ? STATUS_COLORS[s] : STATUS_BG[s],
               color: status === s ? "#fff" : STATUS_COLORS[s],
-              fontFamily: "monospace", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+              fontFamily: "monospace", fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
             }}>{s}</button>
           ))}
         </div>
       </div>
 
-      {/* Tasks */}
-      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
-          Task Checklist — {completedCount}/{tasks.length} completed
-        </div>
-        {tasks.length === 0 && (
-          <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace", marginBottom: 14 }}>
-            No tasks yet. Open the plan and click Track This Project to load tasks.
-          </div>
-        )}
-        {tasks.map((task, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #F0FAF2" }}>
-            <input type="checkbox" checked={task.done} onChange={() => toggleTask(i)}
-              style={{ width: 18, height: 18, accentColor: "#1A7A3C", cursor: "pointer", flexShrink: 0 }} />
-            <span style={{ flex: 1, fontSize: 14, color: task.done ? "#8AB89A" : "#0D2B1A", textDecoration: task.done ? "line-through" : "none", fontFamily: "Georgia, serif" }}>{task.text}</span>
-            <button onClick={() => removeTask(i)} style={{ background: "none", border: "none", color: "#DC2626", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
-          </div>
-        ))}
-        <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace", marginTop: 10, fontStyle: "italic" }}>
-          Tasks are automatically generated from your operations plan.
-        </div>
-      </div>
-
-      {/* Field Notes */}
-      <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Field Notes & Updates</div>
-        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-          <textarea style={{ ...inputStyle, minHeight: 72, resize: "vertical" }} placeholder="Log what's happening on the ground — decisions made, changes, wins, blockers..." value={newNote} onChange={e => setNewNote(e.target.value)} />
-          <button onClick={addNote} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, alignSelf: "flex-end", whiteSpace: "nowrap" }}>+ Log</button>
-        </div>
-        {notes.length === 0 && (
-          <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace" }}>No notes yet. Start logging your project activity.</div>
-        )}
-        {notes.map((note, i) => (
-          <div key={i} style={{ background: "#F0FAF2", border: "1px solid #C8E6D0", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
-            <div style={{ fontSize: 14, color: "#0D2B1A", lineHeight: 1.6, fontFamily: "Georgia, serif", marginBottom: 6 }}>{note.text}</div>
-            <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{note.addedAt}</div>
-          </div>
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 0, marginBottom: 18, borderBottom: "2px solid #C8E6D0" }}>
+        {[["tasks", "✅ Tasks"], ["notes", "📝 Field Notes"], ["finance", "💰 Finance"]].map(([tab, label]) => (
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{
+            padding: "10px 20px", border: "none", borderBottom: activeTab === tab ? "3px solid #1A7A3C" : "3px solid transparent",
+            background: "none", color: activeTab === tab ? "#1A7A3C" : "#4A7A5A", fontFamily: "monospace",
+            fontSize: 12, fontWeight: activeTab === tab ? 700 : 400, cursor: "pointer", marginBottom: -2,
+          }}>{label}</button>
         ))}
       </div>
 
-      {/* View original plan */}
+      {/* TASKS TAB */}
+      {activeTab === "tasks" && (
+        <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+            Task Checklist — {completedCount}/{tasks.length} completed
+          </div>
+          {tasks.length === 0 && (
+            <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace", marginBottom: 14 }}>
+              No tasks yet. Open the plan and click Track This Project to load tasks.
+            </div>
+          )}
+          {tasks.map((task, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #F0FAF2" }}>
+              <input type="checkbox" checked={task.done} onChange={() => toggleTask(i)}
+                style={{ width: 18, height: 18, accentColor: "#1A7A3C", cursor: "pointer", flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 14, color: task.done ? "#8AB89A" : "#0D2B1A", textDecoration: task.done ? "line-through" : "none", fontFamily: "Georgia, serif" }}>{task.text}</span>
+              <button onClick={() => removeTask(i)} style={{ background: "none", border: "none", color: "#DC2626", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
+            </div>
+          ))}
+          <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace", marginTop: 10, fontStyle: "italic" }}>
+            Tasks are automatically generated from your operations plan.
+          </div>
+        </div>
+      )}
+
+      {/* FIELD NOTES TAB */}
+      {activeTab === "notes" && (
+        <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>Field Notes & Updates</div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+            <textarea style={{ ...inputStyle, minHeight: 72, resize: "vertical" }} placeholder="Log what's happening on the ground — decisions made, changes, wins, blockers..." value={newNote} onChange={e => setNewNote(e.target.value)} />
+            <button onClick={addNote} style={{ background: "#1A7A3C", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, alignSelf: "flex-end", whiteSpace: "nowrap" }}>+ Log</button>
+          </div>
+          {notes.length === 0 && (
+            <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace" }}>No notes yet. Start logging your project activity.</div>
+          )}
+          {notes.map((note, i) => (
+            <div key={i} style={{ background: "#F0FAF2", border: "1px solid #C8E6D0", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
+              <div style={{ fontSize: 14, color: "#0D2B1A", lineHeight: 1.6, fontFamily: "Georgia, serif", marginBottom: 6 }}>{note.text}</div>
+              <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{note.addedAt}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* FINANCE TAB */}
+      {activeTab === "finance" && (
+        <div>
+          {/* Budget Summary Cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 18 }}>
+            {[
+              { label: "Total Budget", value: totalBudget > 0 ? fmt(totalBudget) : "Not set", color: "#1A7A3C", bg: "#E8F5EC" },
+              { label: "Total Income", value: fmt(totalIncome), color: "#059669", bg: "#D1FAE5" },
+              { label: "Total Expenses", value: fmt(totalExpenses), color: "#D97706", bg: "#FEF3C7" },
+              { label: "Balance", value: fmt(balance), color: balance >= 0 ? "#1A7A3C" : "#DC2626", bg: balance >= 0 ? "#E8F5EC" : "#FEE2E2" },
+            ].map(card => (
+              <div key={card.label} style={{ background: card.bg, border: `1px solid ${card.color}33`, borderRadius: 10, padding: "14px 16px", borderLeft: `4px solid ${card.color}` }}>
+                <div style={{ fontSize: 11, fontFamily: "monospace", color: card.color, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{card.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: card.color, fontFamily: "monospace" }}>{card.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Budget Health */}
+          {totalBudget > 0 && (
+            <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "14px 18px", marginBottom: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontFamily: "monospace", color: "#4A7A5A", textTransform: "uppercase", letterSpacing: 1 }}>Budget Health</div>
+                <div style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: budgetHealth }}>{budgetUsed}% used — {budgetHealthLabel}</div>
+              </div>
+              <div style={{ height: 8, background: "#E8F5EC", borderRadius: 99, overflow: "hidden" }}>
+                <div style={{ width: `${Math.min(budgetUsed, 100)}%`, height: "100%", background: budgetHealth, borderRadius: 99, transition: "width 0.5s" }} />
+              </div>
+            </div>
+          )}
+
+          {/* Income */}
+          <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+            <div style={{ fontSize: 11, fontFamily: "monospace", color: "#059669", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14, fontWeight: 700 }}>💵 Income / Funds Received</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+              <input style={smallInput} placeholder="Description e.g. Donor grant received" value={newIncome.description} onChange={e => setNewIncome(p => ({...p, description: e.target.value}))} />
+              <input style={smallInput} placeholder="Source e.g. USAID" value={newIncome.source} onChange={e => setNewIncome(p => ({...p, source: e.target.value}))} />
+              <input style={smallInput} type="number" placeholder="Amount" value={newIncome.amount} onChange={e => setNewIncome(p => ({...p, amount: e.target.value}))} />
+              <input style={smallInput} type="date" value={newIncome.date} onChange={e => setNewIncome(p => ({...p, date: e.target.value}))} />
+            </div>
+            <button onClick={addIncome} style={{ background: "#059669", color: "#fff", border: "none", padding: "9px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, marginBottom: 14 }}>+ Add Income</button>
+            {income.length === 0 && <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace" }}>No income recorded yet.</div>}
+            {income.map(item => (
+              <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid #F0FAF2" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>{item.description}</div>
+                  <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{item.source} {item.date ? "· " + item.date : ""}</div>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#059669", fontFamily: "monospace" }}>+{fmt(item.amount)}</div>
+                <button onClick={() => removeIncome(item.id)} style={{ background: "none", border: "none", color: "#DC2626", cursor: "pointer", fontSize: 16 }}>×</button>
+              </div>
+            ))}
+          </div>
+
+          {/* Expenses */}
+          <div style={{ background: "#fff", border: "1px solid #C8E6D0", borderRadius: 10, padding: "18px 20px", marginBottom: 18 }}>
+            <div style={{ fontSize: 11, fontFamily: "monospace", color: "#D97706", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14, fontWeight: 700 }}>💸 Expenses / Funds Out</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+              <input style={smallInput} placeholder="Description e.g. Venue deposit paid" value={newExpense.description} onChange={e => setNewExpense(p => ({...p, description: e.target.value}))} />
+              <input style={smallInput} placeholder="Category e.g. Logistics, Catering" value={newExpense.category} onChange={e => setNewExpense(p => ({...p, category: e.target.value}))} />
+              <input style={smallInput} type="number" placeholder="Amount" value={newExpense.amount} onChange={e => setNewExpense(p => ({...p, amount: e.target.value}))} />
+              <input style={smallInput} type="date" value={newExpense.date} onChange={e => setNewExpense(p => ({...p, date: e.target.value}))} />
+            </div>
+            <button onClick={addExpense} style={{ background: "#D97706", color: "#fff", border: "none", padding: "9px 20px", borderRadius: 8, fontFamily: "monospace", fontSize: 12, cursor: "pointer", fontWeight: 700, marginBottom: 14 }}>+ Add Expense</button>
+            {expenses.length === 0 && <div style={{ fontSize: 13, color: "#8AB89A", fontFamily: "monospace" }}>No expenses recorded yet.</div>}
+            {expenses.map(item => (
+              <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid #F0FAF2" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, color: "#0D2B1A", fontFamily: "Georgia, serif" }}>{item.description}</div>
+                  <div style={{ fontSize: 11, color: "#8AB89A", fontFamily: "monospace" }}>{item.category} {item.date ? "· " + item.date : ""}</div>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#D97706", fontFamily: "monospace" }}>-{fmt(item.amount)}</div>
+                <button onClick={() => removeExpense(item.id)} style={{ background: "none", border: "none", color: "#DC2626", cursor: "pointer", fontSize: 16 }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
       <div style={{ textAlign: "center", padding: "16px 0", borderTop: "1px solid #C8E6D0", color: "#8AB89A", fontFamily: "monospace", fontSize: 11, letterSpacing: 1 }}>
         S-Flow by SPHRAGIS — Project Tracker · Last updated {project.updatedAt}
       </div>
@@ -920,15 +1068,23 @@ function addProjectToDashboard(entry, userId) {
       const line = planLines[i].trim();
       if (!line) continue;
       if (line.length < 8) continue;
-      // Skip section headers and short labels
-      const isHeader = /^(phase|stage|task breakdown|roles|section|week|month|day)/i.test(line);
-      if (isHeader) continue;
-      // Remove numbering, bullets, role assignments
+      // Skip markdown headers (### or ##)
+      if (/^#{1,4}\s/.test(line)) continue;
+      // Skip section headers
+      if (/^(phase|stage|task breakdown|roles|section|week|month|day)\s/i.test(line)) continue;
+      // Clean markdown formatting and role assignments
       const cleaned = line
+        .replace(/^#{1,4}\s*/, "")
+        .replace(/^#+\s*/g, "")
+        .replace(/\*\*/g, "")
+        .replace(/\*/g, "")
         .replace(/^\d+[.):]\s*/, "")
-        .replace(/^[-*•]\s*/, "")
-        .replace(/\s*[-|]\s*(Role|Responsible|Owner|Lead|Assigned)[^:]*:.*$/i, "")
-        .replace(/\s*\([^)]{0,40}\)$/, "")
+        .replace(/^[-•]\s*/, "")
+        .replace(/\s*[-–]\s*Responsible:.*$/i, "")
+        .replace(/\s*[-–]\s*Estimated Duration:.*$/i, "")
+        .replace(/\s*Responsible:.*$/i, "")
+        .replace(/\s*Estimated Duration:.*$/i, "")
+        .replace(/\s*\[.*?\]/g, "")
         .trim();
       if (cleaned.length > 8 && cleaned.length < 200) {
         autoTasks.push({ text: cleaned, done: false });
@@ -936,7 +1092,10 @@ function addProjectToDashboard(entry, userId) {
     }
   }
   // Cap at 20 tasks
-  const finalTasks = autoTasks.slice(0, 20);
+  // Remove phase headers and very short items
+  const finalTasks = autoTasks
+    .filter(t => !t.text.match(/^(phase|stage|###|week|month|section)/i) && t.text.length > 10)
+    .slice(0, 20);
     projects.unshift({
       ...entry,
       status: "Planning",
