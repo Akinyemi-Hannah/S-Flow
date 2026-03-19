@@ -75,7 +75,6 @@ const INDUSTRIES = [
     ],
   },
 ];
-];
 
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://fwkyipqtbncxossqrgeb.supabase.co";
