@@ -74,401 +74,7 @@ const INDUSTRIES = [
       ]},
     ],
   },
-  {
-    id:"health",icon:"🏥",name:"Healthcare",color:"#1565C0",
-    description:"Hospitals, clinics, public health, medical services",
-    tagline:"Deliver quality care. Coordinate with precision.",
-    projects:["Patient Awareness Campaign","Community Health Screening","Medical Conference","Staff Training & Development","Health Policy Advocacy","Research Study Rollout","Clinic / Facility Launch","Mental Health Program","Vaccination Drive","Other"],
-    roles:["Medical Director","Hospital Administrator","Project Manager","Nurse Coordinator","Public Health Officer","Communications Lead","Finance Officer","Research Officer","Community Health Worker","Logistics Coordinator","Quality Assurance Officer","Training Coordinator","Data Manager","Volunteers","Others"],
-    tasks:{
-      default:["Project kickoff","Stakeholder mapping","Venue and facility setup","Budget preparation","Team training","Equipment procurement","Patient registration","Public communications","Documentation and reporting","Post-project evaluation"],
-      "Community Health Screening":["Screening site setup","Medical team deployment","Equipment procurement","Participant registration","Triage workflow design","Data collection setup","Referral pathway","Adverse event protocol","Post-screening follow-up","Report writing"],
-      "Vaccination Drive":["Target population mapping","Cold chain setup","Vaccine procurement","Community mobilization","Vaccination site setup","Adverse event monitoring","Data capture and reporting","Post-campaign analysis"],
-      "Staff Training & Development":["Training needs assessment","Curriculum design","Facilitator sourcing","Participant selection","Pre-training assessment","Training delivery","Post-training evaluation","Competency certification","Follow-up mentorship"],
-    },
-    formSections:[
-      {id:"project",label:"Program Details",icon:"🏥",fields:[
-        {name:"projectName",label:"Program / Project Name",type:"input",required:true,placeholder:"e.g. Lagos Free Health Screening Day 2025"},
-        {name:"description",label:"Program Description & Clinical Objectives",type:"textarea",required:true,placeholder:"Describe the health program, its clinical goals, services to be provided, and expected health outcomes..."},
-        {name:"audience",label:"Target Patient / Beneficiary Population",type:"input",placeholder:"e.g. Adults 40+ with hypertension risk in Surulere"},
-        {name:"location",label:"Country / Location",type:"country"},
-        {name:"expectedPatients",label:"Expected Number of Patients",type:"input",placeholder:"e.g. 300 patients per day"},
-        {name:"timeline",label:"Program Timeline",type:"input",placeholder:"e.g. 3-day screening, April 10-12 2025"},
-        {name:"facilityType",label:"Delivery Setting",type:"select",options:["Community venue","Primary health centre","Secondary hospital","Tertiary hospital","Mobile health unit","Virtual / Telehealth","Multiple locations"]},
-      ]},
-      {id:"clinical",label:"Clinical & Operational Details",icon:"🩺",fields:[
-        {name:"servicesOffered",label:"Health Services to be Provided",type:"textarea",small:true,placeholder:"e.g. Blood pressure check, malaria rapid test, HIV counselling, blood glucose, eye screening..."},
-        {name:"referralSystem",label:"Referral & Follow-Up Plan",type:"textarea",small:true,placeholder:"e.g. Patients with hypertension referred to Lagos State Hospital, follow-up calls after 2 weeks..."},
-        {name:"regulatoryNeeds",label:"Regulatory / Approval Requirements",type:"select",options:["No approval required","State Ministry of Health approval","NAFDAC clearance needed","Ethics committee approval","Multiple approvals needed","Not sure"]},
-      ]},
-      {id:"funding",label:"Budget & Funding",icon:"💰",fields:[
-        {name:"fundingSource",label:"Funding Source",type:"select",options:["Hospital internal budget","Government grant","NGO / donor funded","Corporate CSR sponsorship","Multiple sources","Other"]},
-        {name:"budget",label:"Estimated Program Budget",type:"budget"},
-        {name:"budgetConstraints",label:"Budget Notes",type:"textarea",small:true,placeholder:"e.g. Drug costs capped at 40%, logistics limited to ₦200,000..."},
-      ]},
-      {id:"team",label:"Team & Tasks",icon:"✅",fields:[
-        {name:"roles",label:"Clinical & Admin Team Roles",type:"roles"},
-        {name:"tasks",label:"Key Program Activities",type:"tasks"},
-      ]},
-      {id:"risk",label:"Risk & Safety",icon:"⚠️",fields:[
-        {name:"knownRisks",label:"Operational or Clinical Risks",type:"textarea",small:true,placeholder:"e.g. High patient volume, drug stockouts, adverse events, cold chain failure..."},
-        {name:"safetyProtocol",label:"Patient Safety & Emergency Protocol",type:"textarea",small:true,placeholder:"e.g. On-site medical officer available, referral hospital 10 mins away..."},
-      ]},
-      {id:"comms",label:"Communication Plan",icon:"📢",fields:[
-        {name:"channels",label:"Communication Channels",type:"textarea",small:true,placeholder:"e.g. Clinical WhatsApp groups, hospital notice boards, radio jingles, SMS to community..."},
-        {name:"reportingNeeds",label:"Reporting Requirements",type:"select",options:["Internal clinical records only","Ministry of Health report required","Donor report required","Research publication intended","Multiple reports needed"]},
-      ]},
-    ],
-  },
-  {
-    id:"education",icon:"🎓",name:"Education",color:"#6A1B9A",
-    description:"Schools, universities, e-learning, skills training",
-    tagline:"Design learning. Drive outcomes.",
-    projects:["School Program Launch","Curriculum Development","Student Workshop / Bootcamp","Academic Conference","Teacher Training","Scholarship / Bursary Program","E-Learning Course Rollout","Literacy Campaign","STEM Outreach","Other"],
-    roles:["Program Director","Academic Coordinator","Project Manager","Curriculum Developer","Lead Trainer / Facilitator","Student Affairs Officer","Communications Officer","Finance Officer","Admissions Coordinator","IT / LMS Officer","M&E Officer","Volunteer Teaching Assistants","Others"],
-    tasks:{
-      default:["Program planning and design","Stakeholder briefing","Venue setup","Budget preparation","Trainer sourcing","Learning materials development","Participant registration","Communications and outreach","Documentation","Post-program evaluation"],
-      "Student Workshop / Bootcamp":["Curriculum design","Trainer recruitment","Participant onboarding","Pre-workshop assessment","Learning materials printing","Timetable planning","Workshop facilitation","Post-workshop evaluation","Certification","Alumni follow-up"],
-      "Teacher Training":["Training needs assessment","Content design","Trainer sourcing","Participant selection","Venue setup","Pre-training assessment","Training delivery","Post-training evaluation","Mentorship and follow-up"],
-      "Scholarship / Bursary Program":["Eligibility criteria design","Application portal setup","Outreach to schools","Application review","Interview process","Awardee onboarding","Disbursement plan","Scholar monitoring","Annual renewal process"],
-    },
-    formSections:[
-      {id:"project",label:"Program Details",icon:"🎓",fields:[
-        {name:"projectName",label:"Program / Project Name",type:"input",required:true,placeholder:"e.g. Girls in STEM Bootcamp Lagos 2025"},
-        {name:"description",label:"Program Description & Learning Objectives",type:"textarea",required:true,placeholder:"Describe the program, what learners will gain, skills to be transferred, and expected outcomes..."},
-        {name:"audience",label:"Target Learners / Participants",type:"input",placeholder:"e.g. Secondary school girls aged 14-18 in Abuja"},
-        {name:"location",label:"Country / Location",type:"country"},
-        {name:"expectedLearners",label:"Expected Number of Learners",type:"input",placeholder:"e.g. 100 students per cohort"},
-        {name:"timeline",label:"Program Timeline",type:"input",placeholder:"e.g. 8-week bootcamp, May - June 2025"},
-        {name:"deliveryMode",label:"Delivery Mode",type:"select",options:["In-person / physical","Online / virtual","Hybrid","Self-paced e-learning","On-site at school","Community-based"]},
-      ]},
-      {id:"academic",label:"Academic & Curriculum Details",icon:"📚",fields:[
-        {name:"curriculum",label:"Curriculum / Content Overview",type:"textarea",small:true,placeholder:"e.g. Week 1: Intro to coding, Week 2: HTML/CSS, Week 3: Problem solving..."},
-        {name:"accreditation",label:"Certification or Accreditation",type:"select",options:["No formal certification","Internal certificate of participation","Nationally accredited","University credit-bearing","Professional body certification","Not yet decided"]},
-        {name:"prerequisites",label:"Entry Requirements",type:"textarea",small:true,placeholder:"e.g. Minimum WAEC 5 credits, basic computer literacy, or no requirements..."},
-      ]},
-      {id:"funding",label:"Budget & Funding",icon:"💰",fields:[
-        {name:"fundingSource",label:"Funding Source",type:"select",options:["School / institution budget","Government grant","NGO / donor funded","Corporate sponsorship","Student fees","Scholarship fund","Multiple sources","Other"]},
-        {name:"budget",label:"Estimated Program Budget",type:"budget"},
-      ]},
-      {id:"team",label:"Team & Tasks",icon:"✅",fields:[
-        {name:"roles",label:"Academic & Support Team Roles",type:"roles"},
-        {name:"tasks",label:"Key Program Activities",type:"tasks"},
-      ]},
-      {id:"risk",label:"Risks & Challenges",icon:"⚠️",fields:[
-        {name:"knownRisks",label:"Known Risks or Challenges",type:"textarea",small:true,placeholder:"e.g. Low attendance, facilitator dropouts, internet connectivity issues..."},
-        {name:"riskContext",label:"Learner & Community Context",type:"textarea",small:true,placeholder:"e.g. First-generation students, rural community, limited devices..."},
-      ]},
-      {id:"comms",label:"Communication Plan",icon:"📢",fields:[
-        {name:"channels",label:"Communication Channels",type:"textarea",small:true,placeholder:"e.g. WhatsApp for students/parents, email to schools, Instagram for promotion..."},
-        {name:"reportingNeeds",label:"Reporting Requirements",type:"select",options:["No formal reporting","Internal program report","Funder/donor report","Government authority report","Multiple reports"]},
-      ]},
-    ],
-  },
-  {
-    id:"corporate",icon:"🏢",name:"Corporate / Business",color:"#B45309",
-    description:"Companies, SMEs, enterprise operations",
-    tagline:"Plan smart. Execute faster. Win.",
-    projects:["Product Launch","Corporate Event / Summit","Staff Retreat","CSR Initiative","Brand Campaign","Investor / Stakeholder Meeting","Market Expansion","Internal Process Rollout","Sales Campaign","Annual General Meeting","Other"],
-    roles:["CEO / MD","Project Manager","Operations Manager","Marketing Manager","Sales Lead","Finance Manager","HR Manager","Communications Lead","Product Manager","Brand Manager","Customer Success Lead","Legal / Compliance Officer","IT Manager","Executive Assistant","Others"],
-    tasks:{
-      default:["Project kickoff","Stakeholder alignment","Venue and logistics planning","Budget sign-off","Team role assignment","Vendor engagement","Communications and PR plan","Documentation and reporting","Post-project review","Financial reconciliation"],
-      "Product Launch":["Market research","Product positioning","Launch event planning","Media and PR strategy","Social media campaign","Influencer outreach","Sales team briefing","Distribution setup","Post-launch review"],
-      "Brand Campaign":["Brand audit","Campaign brief and messaging","Creative development","Media planning","Social media rollout","Influencer outreach","Performance tracking","Post-campaign analysis"],
-      "CSR Initiative":["CSR strategy alignment","Community needs assessment","Partner identification","Budget planning","Volunteer mobilisation","Execution and delivery","PR and media coverage","Impact documentation","CSR report"],
-    },
-    formSections:[
-      {id:"project",label:"Project Details",icon:"🏢",fields:[
-        {name:"projectName",label:"Project / Initiative Name",type:"input",required:true,placeholder:"e.g. Q2 Product Launch — Lagos 2025"},
-        {name:"description",label:"Project Description & Business Objective",type:"textarea",required:true,placeholder:"Describe the project, the business problem it solves, commercial goals, and what success looks like..."},
-        {name:"audience",label:"Target Audience / Market",type:"input",placeholder:"e.g. SME owners in Lagos and Abuja, B2B enterprise clients"},
-        {name:"location",label:"Country / Location",type:"country"},
-        {name:"timeline",label:"Project Timeline",type:"input",placeholder:"e.g. 8 weeks, April - June 2025"},
-        {name:"department",label:"Lead Department / Business Unit",type:"input",placeholder:"e.g. Marketing, Sales, Operations, Product"},
-      ]},
-      {id:"business",label:"Business Context",icon:"📊",fields:[
-        {name:"kpis",label:"Key Performance Indicators (KPIs)",type:"textarea",small:true,placeholder:"e.g. 500 product units sold, 20% brand awareness lift, ₦10M revenue target..."},
-        {name:"competitors",label:"Competitive Landscape",type:"textarea",small:true,placeholder:"e.g. 3 main competitors launching similar products, market is price-sensitive..."},
-        {name:"approvals",label:"Approvals or Sign-offs Required",type:"select",options:["CEO/MD approval only","Board approval required","Multiple departmental sign-offs","No formal approval","Legal/regulatory clearance needed"]},
-      ]},
-      {id:"funding",label:"Budget & Resources",icon:"💰",fields:[
-        {name:"fundingSource",label:"Budget Source",type:"select",options:["Departmental budget","Company-wide budget","External investor funding","Revenue-funded","Sponsorship or partnership","Other"]},
-        {name:"budget",label:"Project Budget",type:"budget"},
-        {name:"budgetConstraints",label:"Budget Notes",type:"textarea",small:true,placeholder:"e.g. Marketing spend capped at 30%, no CAPEX allowed..."},
-      ]},
-      {id:"team",label:"Team & Execution Plan",icon:"✅",fields:[
-        {name:"roles",label:"Project Team Roles",type:"roles"},
-        {name:"tasks",label:"Key Project Activities",type:"tasks"},
-        {name:"vendors",label:"External Vendors or Agencies",type:"textarea",small:true,placeholder:"e.g. Creative agency for branding, event company for venue, PR firm for media..."},
-      ]},
-      {id:"risk",label:"Risks & Dependencies",icon:"⚠️",fields:[
-        {name:"knownRisks",label:"Known Risks or Blockers",type:"textarea",small:true,placeholder:"e.g. Key team member leaving, supply chain delays, competitor counter-launch..."},
-        {name:"dependencies",label:"Project Dependencies",type:"textarea",small:true,placeholder:"e.g. Product certification must be complete before launch, board approval needed by March 10..."},
-      ]},
-      {id:"comms",label:"Communication Plan",icon:"📢",fields:[
-        {name:"channels",label:"Internal & External Channels",type:"textarea",small:true,placeholder:"e.g. Slack for team, email for stakeholders, press release, LinkedIn, paid social..."},
-        {name:"reportingNeeds",label:"Reporting Requirements",type:"select",options:["Weekly team status updates","Board/executive reporting","Client-facing updates","Investor reporting","Multiple reporting layers"]},
-      ]},
-    ],
-  },
-  {
-    id:"government",icon:"🏛️",name:"Government / Public Sector",color:"#7B1FA2",
-    description:"MDAs, local government, public programs and policy",
-    tagline:"Serve the people. Execute with accountability.",
-    projects:["Public Sensitization Campaign","Policy Launch","Town Hall / Community Forum","Government Conference","Infrastructure Project","Social Welfare Program","Youth Empowerment Initiative","Public Health Program","Electoral Activity","Other"],
-    roles:["Program Director / DG","Project Coordinator","Policy Officer","Communications Officer","Finance / Budget Officer","M&E Officer","Community Liaison Officer","Legal & Compliance Officer","Logistics Officer","Media Relations Officer","Admin Officer","Field Officers","Security Personnel","Others"],
-    tasks:{
-      default:["Ministerial briefing","Stakeholder mapping","Venue and logistics planning","Budget and procurement plan","Team coordination","Communications and press plan","Field team deployment","Documentation and reporting","Post-project evaluation"],
-      "Public Sensitization Campaign":["Message development and approval","Community mapping","IEC materials design","Media placement","Community mobilization","Field sensitization sessions","Feedback collection","Impact documentation","Final report to ministry"],
-      "Town Hall / Community Forum":["Agenda development","Community leader invitation","Venue setup","Transport logistics","Participant registration","Facilitation plan","Live coverage setup","Minutes documentation","Follow-up action plan"],
-      "Policy Launch":["Policy brief development","Stakeholder consultation","Legal review","Media communication plan","Launch event planning","Policy dissemination","Implementation guidelines","Monitoring framework","Post-launch feedback"],
-    },
-    formSections:[
-      {id:"project",label:"Program Details",icon:"🏛️",fields:[
-        {name:"projectName",label:"Program / Initiative Name",type:"input",required:true,placeholder:"e.g. Lagos State Youth Skills Empowerment Initiative 2025"},
-        {name:"description",label:"Program Description & Policy Objectives",type:"textarea",required:true,placeholder:"Describe the program, the policy mandate behind it, target population, and expected public impact..."},
-        {name:"audience",label:"Target Beneficiaries / Citizens",type:"input",placeholder:"e.g. Unemployed youth aged 18-35 across all LGAs in Rivers State"},
-        {name:"location",label:"Country / Location",type:"country"},
-        {name:"jurisdiction",label:"Jurisdiction / Coverage Area",type:"input",placeholder:"e.g. All 20 LGAs in Ogun State, or Federal - nationwide"},
-        {name:"expectedBeneficiaries",label:"Expected Number of Beneficiaries",type:"input",placeholder:"e.g. 10,000 citizens"},
-        {name:"timeline",label:"Program Timeline",type:"input",placeholder:"e.g. 12 weeks, commencing June 2025"},
-        {name:"mandatoryAuthority",label:"Authorising Authority / Policy Mandate",type:"input",placeholder:"e.g. Ministry of Youth and Sports Development"},
-      ]},
-      {id:"policy",label:"Policy & Compliance",icon:"📜",fields:[
-        {name:"policyBasis",label:"Relevant Policy, Law or Regulation",type:"textarea",small:true,placeholder:"e.g. National Youth Policy 2019, SDG Goal 8, Lagos State Employment Trust Fund Act..."},
-        {name:"approvals",label:"Approvals or Sign-offs Required",type:"select",options:["Ministry head approval","Commissioner sign-off","Governor's Office approval","Federal Executive Council","National Assembly ratification","Multiple approvals","Procurement/ICPC compliance"]},
-        {name:"procurementMethod",label:"Procurement Method",type:"select",options:["Open competitive tender","Restricted tender","Direct procurement","PPP","In-house delivery","Not applicable"]},
-      ]},
-      {id:"funding",label:"Budget & Funding",icon:"💰",fields:[
-        {name:"fundingSource",label:"Funding Source",type:"select",options:["Government annual budget","World Bank / IMF grant","UNDP / UN agency funding","Federal-to-state allocation","NGO partnership funding","Bilateral donor","Multiple sources"]},
-        {name:"budget",label:"Approved / Estimated Budget",type:"budget"},
-        {name:"budgetConstraints",label:"Budget Notes & Procurement Constraints",type:"textarea",small:true,placeholder:"e.g. Must follow BPSR guidelines, 5% reserved for M&E, funds released in tranches..."},
-      ]},
-      {id:"team",label:"Team & Tasks",icon:"✅",fields:[
-        {name:"roles",label:"Government & Field Team Roles",type:"roles"},
-        {name:"tasks",label:"Key Program Activities",type:"tasks"},
-      ]},
-      {id:"risk",label:"Risk & Accountability",icon:"⚠️",fields:[
-        {name:"knownRisks",label:"Operational or Political Risks",type:"textarea",small:true,placeholder:"e.g. Political interference, community resistance, budget release delays..."},
-        {name:"accountability",label:"Accountability & Anti-Corruption Measures",type:"textarea",small:true,placeholder:"e.g. ICPC oversight, public procurement portal, beneficiary verification system..."},
-      ]},
-      {id:"comms",label:"Communication Plan",icon:"📢",fields:[
-        {name:"channels",label:"Communication Channels",type:"textarea",small:true,placeholder:"e.g. Press briefing, NTA/AIT, community town halls, LGA notice boards, radio jingles..."},
-        {name:"reportingNeeds",label:"Reporting Requirements",type:"select",options:["Monthly ministerial briefing","Quarterly National Assembly report","World Bank/donor progress report","Real-time field data capture","Multiple reports"]},
-      ]},
-    ],
-  },
-  {
-    id:"startup",icon:"🚀",name:"Startup / Tech",color:"#0097A7",
-    description:"Tech startups, product teams, innovation hubs",
-    tagline:"Move fast. Build right. Scale smart.",
-    projects:["MVP / Product Launch","Hackathon","Demo Day","Fundraising Round Prep","User Research Sprint","Beta Testing Program","Community / User Event","Partnership Campaign","Team Offsite / Retreat","Other"],
-    roles:["Founder / CEO","CTO / Tech Lead","Product Manager","UX / UI Designer","Frontend Developer","Backend Developer","Growth / Marketing Lead","Community Manager","Data Analyst","Operations Lead","Customer Success","Investor Relations","Interns","Others"],
-    tasks:{
-      default:["Project scoping and sprint planning","Team alignment","Tool and environment setup","Budget planning","Stakeholder briefing","Communications plan","Documentation","Post-sprint retrospective"],
-      "MVP / Product Launch":["Feature scoping","UI/UX prototyping","Development sprints","QA testing","Beta user onboarding","Launch communications","App deployment","Post-launch feedback","Iteration planning"],
-      "Demo Day":["Pitch coaching sessions","Presenter selection","Slide deck review","Venue setup","Investor invitations","AV and livestream setup","Programme design","Post-event networking","Follow-up outreach"],
-      "Fundraising Round Prep":["Financial model update","Pitch deck creation","Investor list mapping","Data room preparation","Legal and cap table review","Warm introduction outreach","Investor meeting scheduling","Due diligence preparation","Term sheet review"],
-      "Beta Testing Program":["Beta user recruitment","Beta onboarding flow","In-app feedback setup","Bug reporting system","Weekly beta check-ins","Feedback synthesis","Bug fix sprints","Beta graduation and launch prep"],
-    },
-    formSections:[
-      {id:"project",label:"Project Details",icon:"🚀",fields:[
-        {name:"projectName",label:"Project / Initiative Name",type:"input",required:true,placeholder:"e.g. Sphragis AI MVP Launch - April 2025"},
-        {name:"description",label:"Project Description & Goals",type:"textarea",required:true,placeholder:"Describe the project, the problem being solved, the user you're building for, and what success looks like..."},
-        {name:"audience",label:"Target Users / Customers",type:"input",placeholder:"e.g. SME owners in Nigeria, B2B SaaS buyers, African university students"},
-        {name:"location",label:"Country / Primary Market",type:"country"},
-        {name:"timeline",label:"Sprint / Project Timeline",type:"input",placeholder:"e.g. 6-week sprint, starting March 10 2025"},
-        {name:"stage",label:"Startup Stage",type:"select",options:["Idea / Pre-seed","MVP / Building","Seed stage","Series A","Growth stage","Not a startup - team/project only"]},
-      ]},
-      {id:"product",label:"Product & Tech Context",icon:"💻",fields:[
-        {name:"productStack",label:"Tech Stack / Platform",type:"textarea",small:true,placeholder:"e.g. React Native frontend, Node.js backend, AWS hosting, PostgreSQL..."},
-        {name:"metrics",label:"Key Success Metrics (OKRs / KPIs)",type:"textarea",small:true,placeholder:"e.g. 500 beta signups, 80 NPS, $10K MRR by month 3..."},
-        {name:"integrations",label:"Key Integrations or Dependencies",type:"textarea",small:true,placeholder:"e.g. Paystack for payments, Twilio for SMS, Google Auth..."},
-      ]},
-      {id:"funding",label:"Budget & Runway",icon:"💰",fields:[
-        {name:"fundingSource",label:"Funding Source",type:"select",options:["Bootstrapped / founder-funded","Pre-seed round","Seed round","Grant / accelerator funding","Revenue-funded","Investor top-up","Other"]},
-        {name:"budget",label:"Project Budget / Runway Allocation",type:"budget"},
-      ]},
-      {id:"team",label:"Team & Tasks",icon:"✅",fields:[
-        {name:"roles",label:"Team Roles",type:"roles"},
-        {name:"tasks",label:"Sprint Activities",type:"tasks"},
-        {name:"tools",label:"Project Management Tools",type:"textarea",small:true,placeholder:"e.g. Notion for docs, Linear for tasks, Slack for comms, Figma for design..."},
-      ]},
-      {id:"risk",label:"Risks & Blockers",icon:"⚠️",fields:[
-        {name:"knownRisks",label:"Known Risks or Blockers",type:"textarea",small:true,placeholder:"e.g. Technical debt, key engineer on vacation, runway < 6 months..."},
-        {name:"riskContext",label:"Market & Competitive Context",type:"textarea",small:true,placeholder:"e.g. 2 well-funded competitors launching Q2, market still being educated..."},
-      ]},
-      {id:"comms",label:"Communication Plan",icon:"📢",fields:[
-        {name:"channels",label:"Team & External Channels",type:"textarea",small:true,placeholder:"e.g. Slack for team, Twitter/X for launch, LinkedIn for investors, Product Hunt for launch day..."},
-        {name:"reportingNeeds",label:"Reporting Requirements",type:"select",options:["Weekly standup updates","Investor monthly update","Board reporting","No formal reporting","Public launch announcement only"]},
-      ]},
-    ],
-  },
-  {
-    id:"events",icon:"🎪",name:"Events & Entertainment",color:"#C62828",
-    description:"Concerts, festivals, fashion, sports, cultural events",
-    tagline:"Create experiences. Deliver memories.",
-    projects:["Concert / Live Show","Cultural Festival","Sports Tournament","Award Ceremony","Exhibition / Expo","Community Fair","Corporate Gala","Comedy Show","Fashion Pop-Up Shop","Fashion Show / Runway","Fashion Week Activation","Designer Showcase & Exhibition","Fashion Market / Bazaar","Brand Collaboration Event","Other"],
-    roles:["Event Director","Production Manager","Stage Manager","Artist / Talent Liaison","Logistics Coordinator","Marketing & PR Lead","Ticketing Manager","Sponsorship Manager","Security Coordinator","Volunteer Coordinator","Technical Director (AV / Lighting)","Catering Manager","Finance Officer","Fashion Show Producer","Creative Director","Runway / Show Director","Wardrobe & Styling Manager","Model Coordinator","Makeup & Hair Lead","Set & Decor Designer","Brand Partnerships Manager","Photographer / Videographer","Content Creator / BTS Lead","Vendor & Exhibitor Coordinator","Retail & Sales Manager","Others"],
-    tasks:{
-      default:["Event concept and brief","Venue sourcing and booking","Budget planning","Vendor and supplier sourcing","Talent/artist booking","Marketing and ticket sales","Logistics and transport planning","On-site coordination plan","Post-event report and reconciliation"],
-      "Concert / Live Show":["Artist booking and contracts","Stage and production design","Sound and lighting setup","Ticketing platform setup","Marketing campaign","Crowd management plan","Security deployment","Backstage coordination","Post-show accounting"],
-      "Award Ceremony":["Category and criteria design","Nominations and voting system","Venue and decor setup","Guest and nominee invitations","Programme and rundown design","MC and entertainment booking","Gifts and trophies procurement","AV setup","Media and PR coverage","Post-event publication"],
-      "Sports Tournament":["Tournament format and rules design","Team/participant registration","Venue and pitch/court booking","Referee and officials sourcing","Equipment procurement","Sponsorship outreach","Marketing and promotion","Match scheduling","Medic/first aid deployment","Prize and trophy procurement","Post-tournament report"],
-      "Cultural Festival":["Festival theme and concept","Performer/exhibitor curation","Venue layout and zoning plan","Ticketing and accreditation","Food and vendor management","Security and crowd flow plan","Marketing campaign","Sponsorship deals","Post-festival impact report"],
-      "Fashion Pop-Up Shop":["Concept and theme development","Brand/designer curation and outreach","Venue scouting and booking","Pop-up layout and spatial design","Vendor agreements and contracts","Visual merchandising plan","Inventory and stock logistics","RSVP system","Photographer and content creator booking","Influencer and press invitations","Social media teaser campaign","On-site styling and brand activation","Payment and POS setup","Post-pop-up sales report"],
-      "Fashion Show / Runway":["Show concept and theme development","Designer and collection curation","Venue selection and runway setup","Lighting and AV design","Model casting and fitting schedule","Wardrobe and styling coordination","Makeup and hair team booking","Music selection and sound design","Front-of-house and seating plan","Press and media accreditation","Rehearsal and run-of-show planning","Guest and VIP invitation management","Live streaming setup","Post-show media distribution"],
-      "Fashion Week Activation":["Brand brief and activation concept","Venue or pop-up space sourcing","Installation and set design","Designer and label partnerships","Model and talent booking","Influencer and KOL outreach","Press kit and lookbook production","Social media live coverage strategy","RSVP and guest management","Post-activation campaign report"],
-      "Designer Showcase & Exhibition":["Exhibition concept and narrative","Designer selection and curation","Gallery or venue booking","Display and installation design","Lookbook and catalogue production","Opening night planning","Press and media invitations","Buyer and trade guest outreach","Photography and documentation","Post-exhibition coverage and report"],
-      "Fashion Market / Bazaar":["Market concept and theme","Vendor/designer application and selection","Venue layout and booth planning","Vendor agreements and fee collection","Marketing and ticket management","Visual identity and signage design","Entertainment and activation planning","Food and beverage curation","Social media and influencer strategy","Post-market feedback","Financial reconciliation"],
-      "Brand Collaboration Event":["Collaboration concept and co-branding brief","Brand partner agreements","Venue sourcing and setup","Product or collection showcase planning","Guest list and RSVP management","Influencer and press outreach","Photography and content production","Social media rollout strategy","Post-event coverage and metrics report"],
-    },
-    formSections:[
-      {id:"project",label:"Event Details",icon:"🎪",fields:[
-        {name:"projectName",label:"Event Name",type:"input",required:true,placeholder:"e.g. Lagos Sound Festival 2025 / The Edit Pop-Up Lagos"},
-        {name:"description",label:"Event Description & Vision",type:"textarea",required:true,placeholder:"Describe the event, its theme, the experience you want to create, and what makes it unique..."},
-        {name:"audience",label:"Target Audience",type:"input",placeholder:"e.g. Fashion-forward millennials in Lagos, music lovers aged 18-35"},
-        {name:"location",label:"Country / Location",type:"country"},
-        {name:"venue",label:"Venue / Event Space",type:"input",placeholder:"e.g. Eko Convention Centre, The Lab Lagos, rooftop Victoria Island"},
-        {name:"expectedAttendance",label:"Expected Attendance",type:"input",placeholder:"e.g. 500 guests, 200 per day over 3 days, 50 VIP + 300 general"},
-        {name:"timeline",label:"Event Date / Timeline",type:"input",placeholder:"e.g. Saturday June 14 2025, or build-up starts May 1"},
-        {name:"eventType",label:"Event Format",type:"select",options:["Ticketed public event","Invite-only / private","Free community event","Hybrid (physical + livestream)","Multi-day event","Trade / industry only","Mixed: trade + public"]},
-      ]},
-      {id:"fashion",label:"Fashion & Creative Details",icon:"👗",fields:[
-        {name:"fashionConcept",label:"Creative Concept / Aesthetic Direction",type:"textarea",small:true,placeholder:"e.g. Afrofuturism meets Lagos street culture, minimalist luxury, vibrant marketplace energy..."},
-        {name:"designers",label:"Designers / Brands / Labels Involved",type:"textarea",small:true,placeholder:"e.g. 10 emerging Lagos designers confirmed, 3 international brands, 1 headline designer TBC..."},
-        {name:"collections",label:"Collections / Products to be Featured",type:"textarea",small:true,placeholder:"e.g. SS25 ready-to-wear collections, accessories and jewellery, limited edition capsule..."},
-        {name:"contentStrategy",label:"Content & Photography Strategy",type:"textarea",small:true,placeholder:"e.g. BTS content creator on-site, editorial shoot day before, live Instagram coverage..."},
-        {name:"dresscode",label:"Dress Code / Guest Experience Theme",type:"input",placeholder:"e.g. All-white, Afrocentric, cocktail, smart casual"},
-        {name:"permits",label:"Permits & Regulatory Requirements",type:"select",options:["No permits needed","State government event permit","LASAA permit","Fire safety inspection","Security/police clearance","Multiple permits needed","Not yet determined"]},
-      ]},
-      {id:"production",label:"Production & Logistics",icon:"🎬",fields:[
-        {name:"production",label:"Production & Set Requirements",type:"textarea",small:true,placeholder:"e.g. Runway 15m x 2m with LED panels, 5 fitting rooms, 3 vendor booths, DJ setup..."},
-        {name:"styling",label:"Styling, Makeup & Hair Requirements",type:"textarea",small:true,placeholder:"e.g. 2 lead stylists, 4 makeup artists, 3 hair stylists, 10 models..."},
-        {name:"vendors",label:"Vendors / Exhibitors / Stalls",type:"textarea",small:true,placeholder:"e.g. 20 fashion vendor stalls, 5 accessory brands, 3 beauty brands, 2 food vendors..."},
-      ]},
-      {id:"funding",label:"Budget & Revenue",icon:"💰",fields:[
-        {name:"fundingSource",label:"Revenue / Funding Model",type:"select",options:["Ticket sales primary","Vendor stall fees primary","Brand sponsorship primary","Ticket + sponsorship mix","Brand-funded / internal","Vendor fees + sponsorship","Multiple revenue streams"]},
-        {name:"budget",label:"Event Budget",type:"budget"},
-        {name:"revenueTarget",label:"Revenue Target",type:"input",placeholder:"e.g. ₦3,000,000 from vendor fees, ₦2,000,000 from tickets"},
-        {name:"vendorFees",label:"Vendor / Exhibitor Fee Structure",type:"input",placeholder:"e.g. ₦150,000 per booth, ₦80,000 for shared table"},
-        {name:"budgetConstraints",label:"Budget Notes",type:"textarea",small:true,placeholder:"e.g. Production capped at ₦2M, all payments to vendors 2 weeks before event..."},
-      ]},
-      {id:"team",label:"Team & Tasks",icon:"✅",fields:[
-        {name:"roles",label:"Event & Creative Team Roles",type:"roles"},
-        {name:"tasks",label:"Key Event Activities",type:"tasks"},
-      ]},
-      {id:"risk",label:"Risk & Contingency",icon:"⚠️",fields:[
-        {name:"knownRisks",label:"Known Risks",type:"textarea",small:true,placeholder:"e.g. Designer pulling out last minute, low ticket sales, venue cancellation, bad weather..."},
-        {name:"riskContext",label:"Venue & Environmental Context",type:"textarea",small:true,placeholder:"e.g. Outdoor venue weather-dependent, noise curfew at 10pm, limited parking..."},
-        {name:"contingency",label:"Contingency Plans",type:"textarea",small:true,placeholder:"e.g. Backup designer list ready, refund policy drafted, indoor backup venue identified..."},
-      ]},
-      {id:"comms",label:"Communication & Marketing Plan",icon:"📢",fields:[
-        {name:"channels",label:"Marketing & Communication Channels",type:"textarea",small:true,placeholder:"e.g. Instagram/TikTok countdown, fashion blogger outreach, WhatsApp broadcast, press release..."},
-        {name:"influencers",label:"Influencer & Press Strategy",type:"textarea",small:true,placeholder:"e.g. 5 micro-influencers (50K-200K), 2 fashion editors invited, Style Vitae and Bella Naija targeted..."},
-        {name:"reportingNeeds",label:"Post-Event Reporting",type:"select",options:["No formal report needed","Sponsor ROI report","Sales and revenue report","Media coverage report","Full post-event report"]},
-      ]},
-    ],
-  },
-  {
-    id:"creative",icon:"🎨",name:"Creative & Media",color:"#BE185D",
-    description:"Agencies, content creators, film, music, publishing",
-    tagline:"Make it meaningful. Ship it brilliantly.",
-    projects:["Content Campaign","Film / Video Production","Music Release","Podcast Launch","Photo Shoot / Editorial","Brand Identity Project","Publishing / Book Launch","Creative Agency Pitch","Influencer Campaign","Digital Media Strategy","Other"],
-    roles:["Creative Director","Executive Producer","Project Manager","Art Director","Content Strategist","Copywriter","Graphic Designer","Videographer / DP","Photographer","Editor (Video/Audio)","Social Media Manager","PR & Comms Lead","Client Services Lead","Music Producer","Talent / Talent Manager","Others"],
-    tasks:{
-      default:["Project brief and creative kick-off","Mood board and concept development","Client or stakeholder alignment","Budget sign-off","Team role assignment","Timeline and production schedule","Asset creation and review","Client feedback and revisions","Final delivery and handover","Post-project review"],
-      "Film / Video Production":["Script development and sign-off","Location scouting and permits","Casting and talent agreements","Shot list and storyboard","Equipment hire and setup","Production days (filming)","Raw footage review","Editing and colour grading","Music licensing and sound design","Final cut review and approval","Distribution and delivery"],
-      "Content Campaign":["Campaign brief and strategy","Content pillars and messaging","Content calendar design","Asset creation (copy, graphics, video)","Scheduling and publishing plan","Influencer integration","Community management plan","Weekly performance review","End-of-campaign report"],
-      "Music Release":["Recording and mixing sessions","Mastering","Artwork and visual identity design","Distribution platform upload","Pre-release campaign","Music video production","Press and playlist pitching","Release day coordination","Post-release promotion plan"],
-      "Brand Identity Project":["Discovery and brand audit","Competitor and market research","Brand strategy workshop","Logo and visual identity design","Brand guidelines development","Touchpoint design","Client presentation and feedback","Final brand handover","Brand launch plan"],
-    },
-    formSections:[
-      {id:"project",label:"Project Details",icon:"🎨",fields:[
-        {name:"projectName",label:"Project / Campaign Name",type:"input",required:true,placeholder:"e.g. Sphragis Brand Film - Q2 2025"},
-        {name:"description",label:"Project Description & Creative Vision",type:"textarea",required:true,placeholder:"Describe the project, the creative vision, what you're making, who it's for, and what impact you want it to have..."},
-        {name:"audience",label:"Target Audience",type:"input",placeholder:"e.g. Young professionals aged 25-40 in Lagos, global African diaspora"},
-        {name:"location",label:"Country / Primary Market",type:"country"},
-        {name:"timeline",label:"Production / Project Timeline",type:"input",placeholder:"e.g. 6-week production, delivering April 30 2025"},
-        {name:"deliverables",label:"Key Deliverables",type:"textarea",small:true,placeholder:"e.g. 1 x 3-min brand film, 5 x social media cut-downs, 10 x photography stills..."},
-      ]},
-      {id:"creative",label:"Creative & Production Details",icon:"🎬",fields:[
-        {name:"concept",label:"Creative Concept / Treatment",type:"textarea",small:true,placeholder:"e.g. Documentary-style brand film following 3 entrepreneurs in Lagos over one week. Warm, authentic, cinematic tone..."},
-        {name:"references",label:"Reference / Inspiration",type:"textarea",small:true,placeholder:"e.g. Apple's Shot on iPhone series, Afrocentric editorial photography, Chicken Republic's recent TV ad..."},
-        {name:"tone",label:"Tone & Style Direction",type:"select",options:["Bold and energetic","Warm and authentic","Clean and minimal","Luxury and refined","Playful and fun","Dramatic and cinematic","Educational and informative","Inspirational and aspirational"]},
-        {name:"platforms",label:"Distribution Platforms / Channels",type:"textarea",small:true,placeholder:"e.g. YouTube (primary), Instagram Reels, TikTok, cinema pre-roll, client website..."},
-      ]},
-      {id:"client",label:"Client & Commercial Context",icon:"📊",fields:[
-        {name:"clientName",label:"Client / Brand Name",type:"input",placeholder:"e.g. SPHRAGIS, Access Bank - or own project"},
-        {name:"budget",label:"Project / Production Budget",type:"budget"},
-        {name:"fundingSource",label:"Budget Source",type:"select",options:["Client-commissioned","Agency internal investment","Brand partnership","Grant-funded","Self-funded creative project","Multiple sources"]},
-        {name:"approvals",label:"Client Approval Process",type:"select",options:["Single client sign-off","Multiple stakeholder sign-offs","Legal review required","No approvals - internal project","Board or executive sign-off"]},
-      ]},
-      {id:"team",label:"Team & Tasks",icon:"✅",fields:[
-        {name:"roles",label:"Creative & Production Team Roles",type:"roles"},
-        {name:"tasks",label:"Key Production Activities",type:"tasks"},
-        {name:"vendors",label:"External Vendors / Freelancers",type:"textarea",small:true,placeholder:"e.g. Freelance DOP, post-production house in Lagos, music composer, voiceover artist..."},
-      ]},
-      {id:"risk",label:"Risks & Challenges",icon:"⚠️",fields:[
-        {name:"knownRisks",label:"Known Risks or Blockers",type:"textarea",small:true,placeholder:"e.g. Location permit delays, talent unavailability, client brief changes, weather for outdoor shoot..."},
-        {name:"riskContext",label:"Project Context",type:"textarea",small:true,placeholder:"e.g. Client has changed brief twice already, shoot location is in a busy public area, tight deadline..."},
-      ]},
-      {id:"comms",label:"Communication Plan",icon:"📢",fields:[
-        {name:"channels",label:"Client & Team Communication Channels",type:"textarea",small:true,placeholder:"e.g. Weekly client call, WhatsApp for team, Frame.io for video review, email for formal sign-offs..."},
-        {name:"reportingNeeds",label:"Reporting & Review Structure",type:"select",options:["Weekly client status report","Milestone-based check-ins only","Daily team standups","End-of-project debrief only","Formal presentations at each phase"]},
-      ]},
-    ],
-  },
-  {
-    id:"faith",icon:"⛪",name:"Faith & Religious Organisations",color:"#92400E",
-    description:"Churches, mosques, faith-based NGOs, religious programs",
-    tagline:"Organise the mission. Serve the congregation.",
-    projects:["Church / Mosque Program","Annual Convention / Conference","Crusade / Revival","Community Outreach (Faith-based)","Youth Program","Leadership Summit","Fundraising / Tithe Campaign","Mission Trip","Faith-based Education Program","Other"],
-    roles:["Senior Pastor / Imam / Leader","Program Director","Project Coordinator","Church Administrator","Communications Officer","Choir / Worship Coordinator","Ushering Coordinator","Prayer Team Lead","Media & AV Director","Children's Ministry Coordinator","Youth Coordinator","Finance Officer / Treasurer","Logistics Coordinator","Volunteers / Ushers","Others"],
-    tasks:{
-      default:["Planning and prayer meeting","Leadership briefing","Venue preparation and setup","Budget preparation","Team role assignment","Publicity and announcement","Registration or guest invitation","Programme and order of service design","Logistics and refreshment planning","Media and AV setup","Post-program review"],
-      "Annual Convention / Conference":["Theme and vision development","Speaker and minister invitation","Venue booking and setup","Accommodation for ministers/guests","Registration and delegate management","Programme booklet design","Worship and choir coordination","AV and live streaming setup","Ushering and crowd management","Refreshment and hospitality","Post-conference follow-up"],
-      "Crusade / Revival":["Evangelism strategy and territory mapping","Ground team and counsellor recruitment","Venue permits and community leader engagement","Stage and sound setup","Counselling and follow-up team training","Publicity (radio, flyers, social media)","Prayer and intercession team coordination","Logistics and medical standby","New convert follow-up plan"],
-      "Community Outreach (Faith-based)":["Community needs assessment","Leadership approval and vision alignment","Volunteer recruitment from congregation","Resource and material procurement","Outreach site setup","Beneficiary registration","Programme execution (food, health, prayer)","Documentation and testimonies","Post-outreach follow-up and discipleship"],
-      "Youth Program":["Youth theme and curriculum design","Youth leader recruitment and training","Participant registration","Venue and accommodation setup","Programme schedule design","Mentorship pairing","Workshop and session facilitation","Talent and creativity showcase","Post-program discipleship plan"],
-    },
-    formSections:[
-      {id:"project",label:"Program Details",icon:"⛪",fields:[
-        {name:"projectName",label:"Program / Event Name",type:"input",required:true,placeholder:"e.g. Dominion Church Annual Convention 2025 / Ramadan Community Outreach"},
-        {name:"description",label:"Program Description & Vision",type:"textarea",required:true,placeholder:"Describe the program, its spiritual vision and goals, who it serves, and what you believe God will do through it..."},
-        {name:"audience",label:"Target Congregation / Participants",type:"input",placeholder:"e.g. All church members, youth aged 13-25, community residents, visiting ministers"},
-        {name:"location",label:"Country / Location",type:"country"},
-        {name:"venue",label:"Venue / Worship Space",type:"input",placeholder:"e.g. Church auditorium, convention centre, community open ground, school hall"},
-        {name:"expectedAttendance",label:"Expected Attendance",type:"input",placeholder:"e.g. 2,000 members, 500 youth, 10,000 for crusade ground"},
-        {name:"timeline",label:"Program Date / Timeline",type:"input",placeholder:"e.g. 3-day convention: April 11-13 2025, or 4-week youth program starting May"},
-      ]},
-      {id:"spiritual",label:"Spiritual & Program Details",icon:"🙏",fields:[
-        {name:"theme",label:"Program Theme / Scripture",type:"input",placeholder:'e.g. "Rising in Dominion" - Joshua 1:9, or "The Year of Overflow"'},
-        {name:"speakers",label:"Speakers / Ministers / Special Guests",type:"textarea",small:true,placeholder:"e.g. Senior Pastor preaching all 3 days, Bishop Adeyemi as guest minister, 2 worship leaders..."},
-        {name:"programOrder",label:"Order of Service / Program Outline",type:"textarea",small:true,placeholder:"e.g. Day 1: Worship Night, Day 2: Teaching Session + Altar Call, Day 3: Commissioning Service..."},
-        {name:"worship",label:"Worship & Music Details",type:"textarea",small:true,placeholder:"e.g. 50-member choir, 8-piece live band, special musical guest, 45-minute worship set before preaching..."},
-      ]},
-      {id:"funding",label:"Budget & Giving",icon:"💰",fields:[
-        {name:"fundingSource",label:"Funding Source",type:"select",options:["Church general offering","Special convention offering","Tithe and first-fruit contributions","Corporate and member sponsorship","External donors / partner churches","Multiple sources","Trust/endowment fund"]},
-        {name:"budget",label:"Estimated Program Budget",type:"budget"},
-        {name:"budgetConstraints",label:"Budget Notes",type:"textarea",small:true,placeholder:"e.g. Hospitality for ministers budgeted at ₦500,000, media production capped at ₦300,000..."},
-      ]},
-      {id:"team",label:"Team & Tasks",icon:"✅",fields:[
-        {name:"roles",label:"Ministry & Coordination Team Roles",type:"roles"},
-        {name:"tasks",label:"Key Program Activities",type:"tasks"},
-        {name:"volunteerNeeds",label:"Volunteer Needs",type:"textarea",small:true,placeholder:"e.g. 30 ushers, 10 counsellors, 15 traffic and parking team, 5 media volunteers..."},
-      ]},
-      {id:"risk",label:"Risk & Logistics",icon:"⚠️",fields:[
-        {name:"knownRisks",label:"Known Risks or Challenges",type:"textarea",small:true,placeholder:"e.g. Large crowd management, generator failure, rain for outdoor crusade, sound system issues..."},
-        {name:"safetyPlan",label:"Safety & Emergency Plan",type:"textarea",small:true,placeholder:"e.g. Medical team on standby, fire exits marked, crowd marshals deployed, nearest hospital 5 mins away..."},
-      ]},
-      {id:"comms",label:"Communication Plan",icon:"📢",fields:[
-        {name:"channels",label:"Communication Channels",type:"textarea",small:true,placeholder:"e.g. Church WhatsApp groups, Sunday announcement, flyers and posters, Instagram/Facebook, radio station..."},
-        {name:"mediaNeeds",label:"Media & Documentation Needs",type:"textarea",small:true,placeholder:"e.g. Live streaming on YouTube, photography for church magazine, video testimonials to share after..."},
-        {name:"reportingNeeds",label:"Post-Program Reporting",type:"select",options:["No formal report needed","Pastor's debrief only","Finance reconciliation report","Full post-program report to leadership","Multiple reports"]},
-      ]},
-    ],
-  },
+];
 ];
 
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
@@ -1394,12 +1000,12 @@ function PlanSection({ icon, title, content }) {
 // ─── LANDING PAGE ─────────────────────────────────────────────────────────────
 function LandingPage({ onStart, onHistory, onDashboard }) {
   const features = [
-    { icon:"🎯", title:"Industry-Specific Plans", desc:"9 industries, dozens of project types. Every plan tailored to your exact sector." },
-    { icon:"⚡", title:"Plans in 30 Seconds", desc:"Describe your project. S-Flow structures objectives, timeline, tasks, risks, and comms." },
-    { icon:"👥", title:"Role-Based Execution", desc:"Assign tasks to real people on your team with accurate headcount tracking." },
-    { icon:"⚠️", title:"Risk Intelligence", desc:"Identify risks before they happen. Get mitigation strategies built into every plan." },
-    { icon:"📤", title:"Export & Share", desc:"Download as PDF or text. Share a link. Your plan lives where your team does." },
-    { icon:"📂", title:"Save Your History", desc:"Every plan saved automatically. Come back anytime and pick up where you left off." },
+    { icon:"📋", title:"Smart Intake Form", desc:"Upload a concept note or fill the form. S-Flow extracts your project scope, budget, team, and timeline automatically." },
+    { icon:"⚡", title:"Operations Plan in Seconds", desc:"S-Flow generates a complete NGO operations plan — objectives, timeline, task breakdown, risks, and communication plan." },
+    { icon:"💰", title:"Budget & Finance Tracking", desc:"Track income and expenses against your project budget. Know exactly what was spent, what's left, and your burn rate." },
+    { icon:"📊", title:"Project Execution Dashboard", desc:"Move projects from Planning to In Progress to Completed. Tick off tasks, log field notes, monitor progress in real time." },
+    { icon:"⚠️", title:"Risk Intelligence", desc:"Identify risks before they become crises. Get mitigation strategies built into every plan from day one." },
+    { icon:"📤", title:"Donor-Ready Export", desc:"Download your plan as PDF. Share a link with stakeholders. Your operations are always presentation-ready." },
   ];
   return (
     <div style={{ minHeight:"100vh", background:C.white }}>
@@ -1410,7 +1016,7 @@ function LandingPage({ onStart, onHistory, onDashboard }) {
           <div style={{ fontSize:11, letterSpacing:4, color:"rgba(255,255,255,0.65)", fontFamily:"monospace", textTransform:"uppercase", marginBottom:20 }}>SPHRAGIS — The Good Operations</div>
           <h1 style={{ fontSize:"clamp(48px,7vw,80px)", fontWeight:900, color:"#fff", lineHeight:1.05, marginBottom:16, fontFamily:"Georgia, serif", letterSpacing:-1 }}>S-Flow</h1>
           <p style={{ fontSize:"clamp(16px,2vw,21px)", color:"rgba(255,255,255,0.82)", lineHeight:1.7, marginBottom:40 }}>
-            Operations intelligence for every industry.<br />Turn any project idea into a complete execution plan in seconds.
+            The operations intelligence platform for NGOs.<br />From concept note to execution — plan, track, and report in one place.
           </p>
           <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap" }}>
             <button onClick={onStart} style={{ background:"#fff", color:C.green, border:"none", padding:"15px 38px", fontFamily:"monospace", fontSize:13, letterSpacing:2, textTransform:"uppercase", cursor:"pointer", borderRadius:8, fontWeight:700, boxShadow:"0 8px 28px rgba(0,0,0,0.18)" }}>
@@ -1426,19 +1032,18 @@ function LandingPage({ onStart, onHistory, onDashboard }) {
         </div>
       </div>
 
-      {/* Industries grid */}
+      {/* NGO Project Types */}
       <div style={{ padding:"60px 40px 20px", maxWidth:960, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:36 }}>
-          <div style={{ fontSize:11, letterSpacing:3, color:C.muted, fontFamily:"monospace", textTransform:"uppercase", marginBottom:8 }}>Built for every sector</div>
-          <h2 style={{ fontSize:"clamp(22px,3vw,34px)", fontWeight:900, color:C.text, fontFamily:"Georgia, serif" }}>9 Industries. One Platform.</h2>
+          <div style={{ fontSize:11, letterSpacing:3, color:C.muted, fontFamily:"monospace", textTransform:"uppercase", marginBottom:8 }}>Built for NGOs & Non-Profits</div>
+          <h2 style={{ fontSize:"clamp(22px,3vw,34px)", fontWeight:900, color:C.text, fontFamily:"Georgia, serif" }}>Every NGO project type. One platform.</h2>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(170px, 1fr))", gap:12, marginBottom:60 }}>
-          {INDUSTRIES.map(ind => (
-            <div key={ind.id} onClick={onStart} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:10, padding:"18px 14px", cursor:"pointer", textAlign:"center", transition:"all 0.18s", borderTop:`3px solid ${ind.color}` }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${ind.color}22`; e.currentTarget.style.transform = "translateY(-3px)"; }}
+          {(INDUSTRIES[0]?.projects || []).map((project, i) => (
+            <div key={project} onClick={onStart} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:10, padding:"16px 14px", cursor:"pointer", textAlign:"center", transition:"all 0.18s", borderTop:`3px solid ${C.green}` }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${C.green}22`; e.currentTarget.style.transform = "translateY(-3px)"; }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}>
-              <div style={{ fontSize:26, marginBottom:8 }}>{ind.icon}</div>
-              <div style={{ fontSize:13, fontWeight:700, color:C.text, lineHeight:1.3 }}>{ind.name}</div>
+              <div style={{ fontSize:11, fontWeight:700, color:C.green, lineHeight:1.4, fontFamily:"monospace" }}>{project}</div>
             </div>
           ))}
         </div>
@@ -1449,7 +1054,7 @@ function LandingPage({ onStart, onHistory, onDashboard }) {
         <div style={{ maxWidth:900, margin:"0 auto" }}>
           <div style={{ textAlign:"center", marginBottom:36 }}>
             <div style={{ fontSize:11, letterSpacing:3, color:C.muted, fontFamily:"monospace", textTransform:"uppercase", marginBottom:8 }}>What S-Flow does</div>
-            <h2 style={{ fontSize:"clamp(20px,3vw,30px)", fontWeight:900, color:C.text, fontFamily:"Georgia, serif" }}>Operations intelligence, not just a template.</h2>
+            <h2 style={{ fontSize:"clamp(20px,3vw,30px)", fontWeight:900, color:C.text, fontFamily:"Georgia, serif" }}>Built for how NGOs actually work.</h2>
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(250px, 1fr))", gap:18 }}>
             {features.map(f => (
@@ -1466,7 +1071,7 @@ function LandingPage({ onStart, onHistory, onDashboard }) {
       {/* CTA */}
       <div style={{ padding:"60px 40px", textAlign:"center", maxWidth:580, margin:"0 auto" }}>
         <h2 style={{ fontSize:"clamp(22px,3vw,36px)", fontWeight:900, color:C.text, marginBottom:14, fontFamily:"Georgia, serif" }}>Ready to execute with clarity?</h2>
-        <p style={{ fontSize:16, color:C.muted, marginBottom:30, lineHeight:1.7 }}>Join organisations across every sector using S-Flow to structure their operations and deliver with confidence.</p>
+        <p style={{ fontSize:16, color:C.muted, marginBottom:30, lineHeight:1.7 }}>Join NGOs across Africa using S-Flow to plan, execute, and report their projects with clarity and confidence.</p>
         <button onClick={onStart} style={{ ...S.btn, fontSize:13, padding:"15px 44px" }}>Get Started — It's Free →</button>
       </div>
 
@@ -1592,7 +1197,7 @@ function SFlow({ session, onLogout }) {
 
   const goBack = () => {
     if (screen === "dashboard") setScreen("landing");
-    else if (screen === "project") { setScreen("industry"); setSelectedIndustry(null); }
+    else if (screen === "project") { setScreen("landing"); setSelectedIndustry(null); }
     else if (screen === "form") setScreen("project");
     else if (screen === "plan") setScreen("form");
     else if (screen === "history") setScreen("landing");
@@ -1874,7 +1479,7 @@ Write as their dedicated ${ind?.name} operations consultant. Be precise, practic
       <style>{CSS}</style>
 
       {/* LANDING */}
-      {screen === "landing" && <LandingPage onStart={() => setScreen("industry")} onHistory={() => setScreen("history")} onDashboard={() => setScreen("dashboard")} />}
+      {screen === "landing" && <LandingPage onStart={() => { setSelectedIndustry(INDUSTRIES[0]); setScreen("project"); }} onHistory={() => setScreen("history")} onDashboard={() => setScreen("dashboard")} />}
 
       {/* HISTORY */}
       {screen === "dashboard" && (
